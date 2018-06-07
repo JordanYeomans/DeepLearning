@@ -44,6 +44,19 @@ def turn_off_layer_training(model, layer_range):
     for i in layer_range:
         layer = model.layers[i]
         layer.trainable = False
-        print('Freezing Layer #{}: {}'.format(i,layer))
+        print('Freezing Layer #{}: {}'.format(i,layer.name))
+
+    model.compile()
+    return model
+
+def turn_on_layer_training(model, layer_range):
+
+    layer_range = np.array(layer_range).reshape(-1)
+
+    for i in layer_range:
+        layer = model.layers[i]
+        layer.trainable = True
+        print('Unfreezing Layer #{}: {}'.format(i,layer.name))
+
 
     return model

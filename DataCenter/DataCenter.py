@@ -1,13 +1,49 @@
 import numpy as np
-import pandas as pd
 
 import DeepLearning.DataCenter.DataProcessing as data
 
-class DataCenter():
+import tensorflow as tf
 
-    def __init__(self, plot_type='Research', batch_size = 100):
-        self.graph_type = plot_type
-        self.batch_size = batch_size
+class DataCenter():
+    ''' A DataCenter object can be considered the hard-drive of the model. We use it to store any information or
+    data we need for deep learning Tasks:
+
+    Categories:
+
+        Data:
+            - Training Data
+            - Validation Data
+            - Evaluation Data
+
+        Neural Network:
+            - Framework being used
+                - Keras
+                - Tensorflow
+
+            - NN parameters:
+                batch_size
+                learning_rate
+                loss
+                cost
+
+        Graphing:
+            - Academic
+            - Research
+
+    '''
+
+    def __init__(self):
+
+        ## Neural Network Parameters
+        self.frame_work = 'Tensorflow'
+        self.learning_rate = 0.005
+        self.batch_size = 100
+        self.epochs = 10
+
+        self.x_placeholder = None
+        self.y_placeholder = None
+        # Graphing Parameters
+        self.graph_type = 'Research'
 
     ## Data Management Functions
     def load_all_data_single(self,data_folder,data_file):
@@ -119,21 +155,51 @@ class DataCenter():
         self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data)
 
     ## Neural Network Functions
-    def reset_train_batches(self, batch_size, num_batches = None):
-        self.batch_size = batch_size
+    def reset_train_batches(self, batch_size = None, num_batches = None):
+        ''' This function resets the training batches
 
-        if num_batches != None:
+        Example:    Training data set = 1000 samples,
+                    Batch size = 300
+
+        Framework:  Keras
+            - The output is an array of as many training samples that fit within the batch size.
+                    Train_input_batches.shape = [900, data_size]
+
+        Framework: Tensorflow
+            - The Tensorflow implementation requires each mini-batch to be explicitly set.
+                    Train_input_batches.shape = (# batches, ) - In each batch is a numpy array of size (batch_size, data_size)
+
+        :param batch_size:
+        :param num_batches:
+        :return:
+        '''
+
+        # Update batch size if passed
+        if batch_size is not None:
+            self.batch_size = batch_size
+
+        # Calc number of batches
+        if num_batches is not None:
             self.num_train_batches = int(num_batches)
         else:
-            self.num_train_batches = int(np.floor(self.train_input_data.shape[0]/batch_size))
+            self.num_train_batches = int(np.floor(self.train_input_data.shape[0]/self.batch_size))
 
+        # Copy all training data
         self.train_input_batches = self.train_input_data
         self.train_output_batches = self.train_output_data
 
+        # Shuffle Training data
         self.train_input_batches, self.train_output_batches = data.shuffle_input_output(self.train_input_batches,self.train_output_batches)
 
+        ## Restrict the amount of training Data a number that fits in the number of batches
         self.train_input_batches = self.train_input_batches[:self.batch_size * self.num_train_batches]
         self.train_output_batches = self.train_output_batches[:self.batch_size * self.num_train_batches]
+
+        if self.frame_work == 'Keras':
+            return
+
+        if self.frame_work == 'Tensorflow':
+            self.train_input_batches, self.train_output_batches = data.convert_to_tensorflow_minbatch(self.train_input_batches, self.train_output_batches, self.batch_size)
 
     def reset_val_batches(self):
 
@@ -157,6 +223,9 @@ class DataCenter():
             self.val_input_batches[:self.val_input_data.shape[0]] = self.val_input_data
             self.val_output_batches[:self.val_output_data.shape[0]] = self.val_output_data
 
+        if self.frame_work == 'Tensorflow':
+            self.val_input_batches, self.val_output_batches = data.convert_to_tensorflow_minbatch(self.val_input_batches, self.val_output_batches, self.batch_size)
+
     def reset_eval_batches(self):
 
         self.eval_batches = int(np.floor(self.eval_input_data.shape[0]/self.batch_size))
@@ -179,7 +248,10 @@ class DataCenter():
             self.eval_input_batches[:self.eval_input_data.shape[0]] = self.eval_input_data
             self.eval_output_batches[:self.eval_output_data.shape[0]] = self.eval_output_data
 
+        if self.frame_work == 'Tensorflow':
+            self.eval_input_batches, self.eval_output_batches = data.convert_to_tensorflow_minbatch(self.eval_input_batches, self.eval_output_batches, self.batch_size)
+
     def reset_all_batches(self):
-        self.reset_train_batches(self.batch_size)
+        self.reset_train_batches()
         self.reset_val_batches()
         self.reset_eval_batches()
