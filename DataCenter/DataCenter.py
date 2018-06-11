@@ -1,8 +1,6 @@
 import numpy as np
-
 import DeepLearning.DataCenter.DataProcessing as data
 
-import tensorflow as tf
 
 class DataCenter():
     ''' A DataCenter object can be considered the hard-drive of the model. We use it to store any information or
@@ -34,15 +32,28 @@ class DataCenter():
 
     def __init__(self):
 
-        ## Neural Network Parameters
+        ## Neural Network Default Parameters
         self.frame_work = 'Tensorflow'
         self.learning_rate = 0.005
         self.batch_size = 100
         self.epochs = 10
 
+        self.model_save_folder = 'saved_models/'
+        self.model_save_name = 'latest_model'
+        self.model_load_folder = 'saved_models/'
+        self.model_load_name = 'latest_model'
+
+        self.new_model_scope = 'new_model'
+        self.transfer_model_scope = 'transfer'
+
         self.x_placeholder = None
         self.y_placeholder = None
-        # Graphing Parameters
+
+        # Transfer Learning
+        self.transfer_var_names = None
+        self.transfer_var_values = None
+
+        ## Graphing Parameters
         self.graph_type = 'Research'
 
     ## Data Management Functions

@@ -2,30 +2,33 @@ import tensorflow as tf
 import time
 import numpy as np
 
-def three_dense_layers(DataCenter):
+import DeepLearning.Tensorflow_Base_Functions.initialization as tfInitial
 
-    x = DataCenter.x_placeholder
+def Conv_Dense_0001_a(DataCenter, transfer = False):
 
-    nn = tf.layers.conv1d(x, filters=64, kernel_size=5, activation=tf.nn.relu)
-    nn = tf.layers.max_pooling1d(nn,pool_size=4, strides=2)
+    tfInitial.initialize_placeholders(DataCenter)
 
-    nn = tf.layers.conv1d(nn, filters=128, kernel_size=5, activation=tf.nn.relu)
-    nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2)
+    scope = DataCenter.new_model_scope
 
-    nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu)
-    nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2)
+    with tf.variable_scope(scope):
+        x = DataCenter.x_placeholder
 
-    nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu)
-    nn = tf.layers.flatten(nn)
+        nn = tf.layers.conv1d(x, filters=64, kernel_size=5, activation=tf.nn.relu, name='conv1')
 
-    nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu)
-    nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu)
+        nn = tf.layers.max_pooling1d(nn,pool_size=4, strides=2, name = 'max_pool1')
 
+        nn = tf.layers.conv1d(nn, filters=128, kernel_size=5, activation=tf.nn.relu, name='conv2')
+        nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2, name = 'max_pool2')
 
-    nn = tf.layers.dense(nn, 30, activation=tf.nn.sigmoid)
+        nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu, name='conv3')
+        nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2, name = 'max_pool3')
+
+        nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu, name='conv4')
+        nn = tf.layers.flatten(nn, name='flatten_1')
+
+        nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu, name='dense_1')
+        nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu, name='dense_2')
+
+        nn = tf.layers.dense(nn, 30, activation=tf.nn.sigmoid, name='dense_3')
 
     return nn
-
-def Conv_LSTM_Dense_0001_a():
-
-    return

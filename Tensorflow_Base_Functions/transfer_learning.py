@@ -1,0 +1,118 @@
+import tensorflow as tf
+import numpy as np
+
+from DeepLearning.Misc.ProgBar import new_prog_bar, update_prog_bar
+
+import DeepLearning.Tensorflow_Base_Functions.cost as tfCost
+import DeepLearning.Tensorflow_Base_Functions.optimizers as tfOptimizers
+import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
+
+
+def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, save = True, min_save_acc = 0):
+    ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learnign
+
+    '''
+
+    cost = tfCost.categorical_cross_entropy(DataCenter, model)
+    optimizer = tfOptimizers.adam_optimizer(DataCenter, cost)
+    saver = tf.train.Saver()
+
+    x = DataCenter.x_placeholder
+    y = DataCenter.y_placeholder
+
+    epochs = DataCenter.epochs
+
+    prog_bar = new_prog_bar()
+
+    val_x_all = DataCenter.val_input_batches
+    val_y_all = DataCenter.val_output_batches
+
+    acc_best = 0
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+
+        ##########_________________###############
+        ## Assign Weights For transfer Layers
+
+        print("Transfer Learning - Loading Weights - NO LSTM's yet")
+        for i in range(len(transfer_layers)):
+            with tf.variable_scope(DataCenter.transfer_model_scope + '/' + transfer_layers[i], reuse=True):
+                weight = tf.get_variable('kernel')
+                bias = tf.get_variable('bias')
+
+                weight_name = str(weight.name)
+                bias_name = str(bias.name)
+
+                weight_name = weight_name[weight_name.find('/'):]
+                bias_name = bias_name[bias_name.find('/'):]
+
+                weight_pos = np.where(DataCenter.transfer_var_names == weight_name)[0][0]
+                bias_pos = np.where(DataCenter.transfer_var_names == bias_name)[0][0]
+
+                sess.run(tf.assign(weight, DataCenter.transfer_var_values[weight_pos]))
+                sess.run(tf.assign(bias, DataCenter.transfer_var_values[bias_pos]))
+
+                print('Loaded {}% of Weights'.format(np.round(i/len(transfer_layers)*100)))
+
+        ##########_________________###############
+        ## Assign Weights For transfer Layers
+
+
+        # Train Network
+        for epoch in range(epochs):
+            for batch in range(DataCenter.num_train_batches):
+
+                epoch_x = DataCenter.train_input_batches[batch]
+                epoch_y = DataCenter.train_output_batches[batch]
+
+                _, c = sess.run([optimizer, cost], feed_dict={x: epoch_x, y: epoch_y})
+
+                update = batch/DataCenter.num_train_batches
+                update_prog_bar(prog_bar, update)
+
+            print('\n Epoch', epoch, 'completed out of', epochs, 'loss:', c)
+
+            # Calculate Validation Accuracy
+            acc = tfEval.prediction_accuracy(DataCenter, model, val_x_all, val_y_all)
+            print('Validation Accuracy: {}%'.format(np.round(np.mean(acc)*100,2)))
+
+            acc_best = acc if acc > acc_best else acc_best
+
+            if save is True and acc == acc_best and acc > min_save_acc:
+                print('Saving Model')
+                saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)
+
+        tfEval.predict_train_val_eval(DataCenter, model)
+
+def extract_variables(DataCenter):
+
+    with tf.Session() as sess:
+        # Load Model
+        new_saver = tf.train.import_meta_graph(DataCenter.model_load_folder + DataCenter.model_load_name + '.meta')
+        new_saver.restore(sess, tf.train.latest_checkpoint(DataCenter.model_load_folder))
+
+        # Get All Variables
+        variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+
+        var_names = []
+        var_values = []
+
+        for i in range(np.array(variables).shape[0]):
+
+            variable = variables[i]
+
+            name = variable.name
+            value = sess.run(variable)
+
+            var_names.append(name[name.find('/'):])
+            var_values.append(value)
+
+    sess.close()
+    tf.reset_default_graph()
+
+    DataCenter.transfer_var_names = np.array(var_names)
+    DataCenter.transfer_var_values = var_values
+
+    return
+
