@@ -10,7 +10,7 @@ import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 
 import matplotlib.pyplot as plt
 
-def train_categorical_network(DataCenter, model, save = True, min_save_acc = 0):
+def train_categorical_network(DataCenter, model, save = True, load_model = False, min_save_acc = 0):
 
     cost = tfCost.categorical_cross_entropy(DataCenter, model)
     optimizer = tfOptimizers.adam_optimizer(DataCenter, cost)
@@ -30,6 +30,15 @@ def train_categorical_network(DataCenter, model, save = True, min_save_acc = 0):
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+
+        if load_model == True:
+            new_saver = tf.train.import_meta_graph(DataCenter.model_load_folder + DataCenter.model_load_name + '.meta')
+            new_saver.restore(sess, tf.train.latest_checkpoint(DataCenter.model_load_folder))
+
+        # Print Data Information
+        print('Data being used: {}'.format(DataCenter.folder_path + DataCenter.file_prefix))
+        print('Total Training Samples {}'.format(DataCenter.train_samples))
+        print('Total Validation Samples {}'.format(DataCenter.val_samples))
 
         for epoch in range(epochs):
             for batch in range(DataCenter.num_train_batches):

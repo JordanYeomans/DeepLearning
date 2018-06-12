@@ -1,20 +1,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 import copy
 import report_writing_functions.research.figures as research
 import report_writing_functions.academic.figures as academic
+import DeepLearning.DataCenter.DataProcessing as data
 
 class Graph():
     def __init__(self):
         self.graph_type = 'Research'
 
+        # Data
+        self.train_input_data = None
+        self.train_output_data = None
+        self.val_input_data = None
+        self.val_output_data = None
+        self.eval_input_data = None
+        self.eval_output_data = None
+
+        # Predictions
         self.train_true = None
         self.train_predictions = None
-
         self.val_input_data = None
         self.val_true = None
         self.val_predictions = None
-
         self.eval_input_data = None
         self.eval_true = None
         self.eval_predictions = None
@@ -26,7 +35,7 @@ def correlation_train_val_eval(DataCenter, plot_outputs = None, samples = 1000, 
     GraphData = graph_data(DataCenter)
 
     # Restrict Samples
-    restrict_samples(GraphData, samples)
+    restrict_prediction_samples(GraphData, samples)
 
     # Todo Shuffle
     if plot_outputs == None:
@@ -62,6 +71,48 @@ def correlation_train_val_eval(DataCenter, plot_outputs = None, samples = 1000, 
 
     return plot
 
+def train_val_eval_samples(DataCenter, samples = 4, shuffle = True):
+
+    # Initiate Graph Data
+    GraphData = graph_data(DataCenter)
+
+    # Shuffle Data
+    if shuffle is True:
+        shuffle_data_samples(GraphData)
+
+    # Restrict Samples
+    restrict_data_samples(GraphData, samples)
+
+    # Define Graph Type
+    if GraphData.graph_type == 'Research':
+        plot = research.SubPlot(2, 3)
+
+    elif GraphData.graph_type == 'Academic':
+        plot = academic.SubPlot(2, 3)
+
+    # Plot Input Data
+    for i in range(samples):
+        plot.current_plot = 1
+        plot.add_subplot_data(GraphData.train_input_data[i], add_data_to=1, title='Training Input Examples')
+
+        plot.current_plot = 2
+        plot.add_subplot_data(GraphData.val_input_data[i], add_data_to=2, title='Validation Input Examples')
+
+        plot.current_plot = 3
+        plot.add_subplot_data(GraphData.eval_input_data[i], add_data_to=3, title='Evaluation Input Examples')
+
+        plot.current_plot = 4
+        plot.add_subplot_data(GraphData.train_output_data[i], add_data_to=4, title='Training Output Examples')
+
+        plot.current_plot = 5
+        plot.add_subplot_data(GraphData.val_output_data[i], add_data_to=5, title='Validation Output Examples')
+
+        plot.current_plot = 6
+        plot.add_subplot_data(GraphData.eval_output_data[i], add_data_to=6, title='Evaluation Output Examples')
+
+    return plot
+
+
 def reshape_channel(data):
     channels = data.shape[-1]
 
@@ -75,24 +126,55 @@ def reshape_channel(data):
     return data
 
 def graph_data(DataCenter):
+    ''' Object to copy data from DataCenter.
+    - We copy it so we can manipulate it without changing the core data
+    - We can't copy the entire object as deepcopy can't copy Tensorflow Tensors
 
+    '''
     GraphData = Graph()
 
-    GraphData.train_true = copy.deepcopy(DataCenter.train_true)
-    GraphData.train_predictions = copy.deepcopy(DataCenter.train_predictions)
-
+    # Copy Data
+    GraphData.train_input_data = copy.deepcopy(DataCenter.train_input_data)
     GraphData.val_input_data = copy.deepcopy(DataCenter.val_input_data)
-    GraphData.val_true = copy.deepcopy(DataCenter.val_true)
-    GraphData.val_predictions = copy.deepcopy(DataCenter.val_predictions)
-
     GraphData.eval_input_data = copy.deepcopy(DataCenter.eval_input_data)
-    GraphData.eval_true = copy.deepcopy(DataCenter.eval_true)
-    GraphData.eval_predictions = copy.deepcopy(DataCenter.eval_predictions)
+
+    GraphData.train_output_data = copy.deepcopy(DataCenter.train_output_data)
+    GraphData.val_output_data = copy.deepcopy(DataCenter.val_output_data)
+    GraphData.eval_output_data = copy.deepcopy(DataCenter.eval_output_data)
+
+    # Copy Predictions
+    try:
+        GraphData.train_true = copy.deepcopy(DataCenter.train_true)
+        GraphData.train_predictions = copy.deepcopy(DataCenter.train_predictions)
+
+        GraphData.val_input_data = copy.deepcopy(DataCenter.val_input_data)
+        GraphData.val_true = copy.deepcopy(DataCenter.val_true)
+        GraphData.val_predictions = copy.deepcopy(DataCenter.val_predictions)
+
+        GraphData.eval_input_data = copy.deepcopy(DataCenter.eval_input_data)
+        GraphData.eval_true = copy.deepcopy(DataCenter.eval_true)
+        GraphData.eval_predictions = copy.deepcopy(DataCenter.eval_predictions)
+
+    except AttributeError:
+        print('Just letting you know... No Predictions in DataCenter Object')
 
     return GraphData
 
-def restrict_samples(GraphData, samples):
-    # Restrict to number of samples
+def restrict_data_samples(GraphData, samples):
+    ''' Restrict the number of data samples
+    '''
+
+    GraphData.train_input_data = GraphData.train_input_data[:samples]
+    GraphData.train_output_data = GraphData.train_output_data[:samples]
+    GraphData.val_input_data = GraphData.val_input_data[:samples]
+    GraphData.val_output_data = GraphData.val_output_data[:samples]
+    GraphData.eval_input_data = GraphData.eval_input_data[:samples]
+    GraphData.eval_output_data = GraphData.eval_output_data[:samples]
+
+def restrict_prediction_samples(GraphData, samples):
+    ''' Restrict the number of prediction samples
+    '''
+
     GraphData.train_true = GraphData.train_true[:samples]
     GraphData.train_predictions = GraphData.train_predictions[:samples]
 
@@ -111,3 +193,16 @@ def restrict_samples(GraphData, samples):
     else:
         GraphData.eval_true = GraphData.eval_true[:GraphData.eval_input_data.shape[0]]
         GraphData.eval_predictions = GraphData.eval_predictions[:GraphData.eval_input_data.shape[0]]
+
+def shuffle_data_samples(GraphData):
+    ''' Shuffle Data
+    '''
+
+    GraphData.train_input_data, GraphData.train_output_data = data.shuffle_input_output(GraphData.train_input_data,
+                                                                                        GraphData.train_output_data)
+
+    GraphData.val_input_data, GraphData.val_output_data = data.shuffle_input_output(GraphData.val_input_data,
+                                                                                        GraphData.val_output_data)
+
+    GraphData.eval_input_data, GraphData.eval_output_data = data.shuffle_input_output(GraphData.eval_input_data,
+                                                                                        GraphData.eval_output_data)

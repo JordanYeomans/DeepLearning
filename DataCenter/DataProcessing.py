@@ -117,23 +117,33 @@ def reshape_1D_input(input_data):
 
 def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
     ''' Convert an array from [Samples, data size] - [Batches, Batch_size, Data size]
-
     '''
     print('Splitting Into Batches')
 
-    num_samples = int(input_data.shape[0]/batch_size)
+    num_batches = int(input_data.shape[0]/batch_size)
 
     new_input_data = np.array([input_data[:batch_size]])
-    new_output_data = ([output_data[:batch_size]])
+    new_output_data = np.array(([output_data[:batch_size]]))
 
-    if num_samples >=2:
-        for i in range(1,num_samples):
-            data_in = np.array([input_data[batch_size * i : batch_size * (i+1)]])
-            data_out = np.array([output_data[batch_size * i : batch_size * (i+1)]])
+    # Note:
+    # Input and Output data dimensions will change depending on data type. An image output for say image segmentation
+    # will have a different output dimension to categories.
 
-            new_input_data = np.concatenate([new_input_data, data_in], axis=0)
-            new_output_data = np.concatenate([new_output_data, data_out], axis=0)
+    # Create Input Batch Array
+    if new_input_data.ndim == 4:
+        new_input_data = np.zeros((num_batches, new_input_data.shape[1], new_input_data.shape[2], new_input_data.shape[3]))
+    else:
+        raise 'Need to add functionality for Not 2 Input dimensions'
 
-            print(i/num_samples)
+    # Create Output Batch Array
+    if new_output_data.ndim == 3:
+        new_output_data = np.zeros((num_batches, new_output_data.shape[1], new_output_data.shape[2]))
+    else:
+        raise 'Need to add functionality for Not 1 Output dimensions'
 
-    return np.array(new_input_data), np.array(new_output_data)
+    if num_batches > 1:
+        for i in range(num_batches):
+            new_input_data[i] = np.array([input_data[batch_size * i : batch_size * (i+1)]])
+            new_output_data[i] = np.array([output_data[batch_size * i : batch_size * (i+1)]])
+
+    return new_input_data, new_output_data

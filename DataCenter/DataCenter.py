@@ -53,6 +53,12 @@ class DataCenter():
         self.transfer_var_names = None
         self.transfer_var_values = None
 
+
+        # Data
+        self.all_data = None
+        self.folder_path = './data/'
+        self.file_prefix = ''
+
         ## Graphing Parameters
         self.graph_type = 'Research'
 
@@ -63,8 +69,18 @@ class DataCenter():
         self.all_data = data.load_data(data_folder+data_file)
         self.all_data = np.nan_to_num(self.all_data)
 
-    # Todo
-        # def load_all_data_multiple
+    def load_all_data_multiple(self, data_folder, data_files):
+        print('Loading Data from multiple CSV files')
+        print('Loading from {}. {} Left'.format(data_folder + data_files[0], len(data_files)))
+        self.data_location = data_folder
+        self.all_data = data.load_data(data_folder + data_files[0])
+        print('Current Samples = {}'.format(self.all_data.shape[0]))
+
+        for i in range(1,len(data_files)):
+            print('Loading from {}. {} Left'.format(data_folder + data_files[i], len(data_files)-i))
+            new_data = data.load_data(data_folder + data_files[i])
+            self.all_data = np.concatenate([self.all_data, new_data], axis=0)
+            print('Current Samples = {}'.format(self.all_data.shape[0]))
 
     def split_input_output_data(self, num_outputs, output_first = True):
         # Split into input and output data
@@ -110,44 +126,31 @@ class DataCenter():
         self.train_input_data = self.all_input_data[:total_samples - self.eval_samples - self.val_samples]
         self.train_output_data = self.all_output_data[:total_samples - self.eval_samples - self.val_samples]
 
-    def save_data(self, folder_path='./data/', file_prefix=''):
-        print('Savings data to {}'.format(folder_path))
-        self.folder_path = folder_path
-        np.save(folder_path + file_prefix + 'training_input_data.npy', self.train_input_data)
-        np.save(folder_path + file_prefix + 'validation_input_data.npy', self.val_input_data)
-        np.save(folder_path + file_prefix + 'evaluation_input_data.npy', self.eval_input_data)
+    def save_data(self):
+        path = self.folder_path + self.file_prefix
+        print('Savings data to {}'.format(self.folder_path))
 
-        np.save(folder_path + file_prefix + 'training_output_data.npy', self.train_output_data)
-        np.save(folder_path + file_prefix + 'validation_output_data.npy', self.val_output_data)
-        np.save(folder_path + file_prefix + 'evaluation_output_data.npy', self.eval_output_data)
+        np.save(path + 'training_input_data.npy', self.train_input_data)
+        np.save(path + 'validation_input_data.npy', self.val_input_data)
+        np.save(path + 'evaluation_input_data.npy', self.eval_input_data)
 
-    def load_data(self, folder_path='./data/', file_prefix=''):
-        print('Loading data from {}'.format(folder_path))
-        self.train_input_data = np.load(folder_path + file_prefix + 'training_input_data.npy')
-        self.val_input_data = np.load(folder_path + file_prefix + 'validation_input_data.npy')
-        self.eval_input_data = np.load(folder_path + file_prefix + 'evaluation_input_data.npy')
+        np.save(path + 'training_output_data.npy', self.train_output_data)
+        np.save(path + 'validation_output_data.npy', self.val_output_data)
+        np.save(path + 'evaluation_output_data.npy', self.eval_output_data)
 
-        self.train_output_data = np.load(folder_path + file_prefix + 'training_output_data.npy')
-        self.val_output_data = np.load(folder_path + file_prefix + 'validation_output_data.npy')
-        self.eval_output_data = np.load(folder_path + file_prefix + 'evaluation_output_data.npy')
+    def load_data(self):
+        path = self.folder_path + self.file_prefix
 
-        self.train_samples = self.train_input_data.shape[0]
-        self.val_samples = self.val_input_data.shape[0]
-        self.eval_samples = self.eval_input_data.shape[0]
-        total_samples = self.train_samples + self.val_samples + self.eval_samples
+        print('Loading data from {}'.format(path))
+        self.train_input_data = np.load(path + 'training_input_data.npy')
+        self.val_input_data = np.load(path + 'validation_input_data.npy')
+        self.eval_input_data = np.load(path + 'evaluation_input_data.npy')
 
-        print('Train Samples = {}({}%), Val Samples = {}({}%), Eval Samples = {}({}%)'.format(self.train_samples,
-                                                                                              np.round(
-                                                                                                  self.train_samples / total_samples * 100,
-                                                                                                  2),
-                                                                                              self.val_samples,
-                                                                                              np.round(
-                                                                                                  self.val_samples / total_samples * 100,
-                                                                                                  2),
-                                                                                              self.eval_samples,
-                                                                                              np.round(
-                                                                                                  self.eval_samples / total_samples * 100,
-                                                                                                  2)))
+        self.train_output_data = np.load(path + 'training_output_data.npy')
+        self.val_output_data = np.load(path + 'validation_output_data.npy')
+        self.eval_output_data = np.load(path + 'evaluation_output_data.npy')
+
+        self.print_num_samples()
 
     # Input/Output Scaling
     def scale_input(self, scale = None):
@@ -266,3 +269,23 @@ class DataCenter():
         self.reset_train_batches()
         self.reset_val_batches()
         self.reset_eval_batches()
+
+    def print_num_samples(self):
+        self.train_samples = self.train_input_data.shape[0]
+        self.val_samples = self.val_input_data.shape[0]
+        self.eval_samples = self.eval_input_data.shape[0]
+
+        total_samples = self.train_samples + self.val_samples + self.eval_samples
+
+        print('Train Samples = {}({}%), Val Samples = {}({}%), Eval Samples = {}({}%)'.format(self.train_samples,
+                                                                                              np.round(
+                                                                                                  self.train_samples / total_samples * 100,
+                                                                                                  2),
+                                                                                              self.val_samples,
+                                                                                              np.round(
+                                                                                                  self.val_samples / total_samples * 100,
+                                                                                                  2),
+                                                                                              self.eval_samples,
+                                                                                              np.round(
+                                                                                                  self.eval_samples / total_samples * 100,
+                                                                                                  2)))

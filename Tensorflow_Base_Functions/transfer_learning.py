@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
 
+import matplotlib.pyplot as plt
+
+from pylab import *
 from DeepLearning.Misc.ProgBar import new_prog_bar, update_prog_bar
 
 import DeepLearning.Tensorflow_Base_Functions.cost as tfCost
@@ -8,8 +11,9 @@ import DeepLearning.Tensorflow_Base_Functions.optimizers as tfOptimizers
 import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 
 
-def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, save = True, min_save_acc = 0):
-    ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learnign
+def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save = True, min_save_acc = 0):
+
+    ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learning
 
     '''
 
@@ -32,35 +36,57 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
+        print("Transfer Learning - Loading Weights - NO LSTM's yet")
+
         ##########_________________###############
         ## Assign Weights For transfer Layers
-
-        print("Transfer Learning - Loading Weights - NO LSTM's yet")
         for i in range(len(transfer_layers)):
+            # Get Layer Type
+            type = transfer_layer_types[i]
+
             with tf.variable_scope(DataCenter.transfer_model_scope + '/' + transfer_layers[i], reuse=True):
-                weight = tf.get_variable('kernel')
-                bias = tf.get_variable('bias')
+                # Convolution or Dense Layers
+                if type == 'conv' or type == 'dense':
 
-                weight_name = str(weight.name)
-                bias_name = str(bias.name)
+                    weight = tf.get_variable('kernel')
+                    bias = tf.get_variable('bias')
 
-                weight_name = weight_name[weight_name.find('/'):]
-                bias_name = bias_name[bias_name.find('/'):]
+                    weight_name = str(weight.name)
+                    bias_name = str(bias.name)
 
-                weight_pos = np.where(DataCenter.transfer_var_names == weight_name)[0][0]
-                bias_pos = np.where(DataCenter.transfer_var_names == bias_name)[0][0]
+                    weight_name = weight_name[weight_name.find('/'):]
+                    bias_name = bias_name[bias_name.find('/'):]
 
-                sess.run(tf.assign(weight, DataCenter.transfer_var_values[weight_pos]))
-                sess.run(tf.assign(bias, DataCenter.transfer_var_values[bias_pos]))
+                    weight_pos = np.where(DataCenter.transfer_var_names == weight_name)[0][0]
+                    bias_pos = np.where(DataCenter.transfer_var_names == bias_name)[0][0]
+
+                    sess.run(tf.assign(weight, DataCenter.transfer_var_values[weight_pos]))
+                    sess.run(tf.assign(bias, DataCenter.transfer_var_values[bias_pos]))
+
+                elif type == 'batchnorm':
+                    gamma = tf.get_variable('gamma')
+                    beta = tf.get_variable('beta')
+
+                    gamma_name = str(gamma.name)
+                    beta_name = str(beta.name)
+
+                    gamma_name = gamma_name[gamma_name.find('/'):]
+                    beta_name = beta_name[beta_name.find('/'):]
+
+                    gamma_pos = np.where(DataCenter.transfer_var_names == gamma_name)[0][0]
+                    beta_pos = np.where(DataCenter.transfer_var_names == beta_name)[0][0]
+
+                    sess.run(tf.assign(gamma, DataCenter.transfer_var_values[gamma_pos]))
+                    sess.run(tf.assign(beta, DataCenter.transfer_var_values[beta_pos]))
 
                 print('Loaded {}% of Weights'.format(np.round(i/len(transfer_layers)*100)))
 
         ##########_________________###############
         ## Assign Weights For transfer Layers
 
-
         # Train Network
         for epoch in range(epochs):
+
             for batch in range(DataCenter.num_train_batches):
 
                 epoch_x = DataCenter.train_input_batches[batch]
@@ -79,11 +105,13 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
 
             acc_best = acc if acc > acc_best else acc_best
 
-            if save is True and acc == acc_best and acc > min_save_acc:
+            if save is True and acc == acc_best and acc >= min_save_acc:
                 print('Saving Model')
+                min_save_acc += 0.01
                 saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)
 
         tfEval.predict_train_val_eval(DataCenter, model)
+
 
 def extract_variables(DataCenter):
 
@@ -115,4 +143,3 @@ def extract_variables(DataCenter):
     DataCenter.transfer_var_values = var_values
 
     return
-
