@@ -17,8 +17,8 @@ def Conv_Dense_0001_a(DataCenter, trainable = False):
         x = DataCenter.x_placeholder
 
         nn = tf.layers.conv1d(x, filters=64, kernel_size=5, name='conv1_1', trainable=trainable)
-        nn = tf.layers.conv1d(x, filters=64, kernel_size=5, name='conv1_2', trainable=trainable)
-        nn = tf.layers.conv1d(x, filters=64, kernel_size=5, name='conv1_3', trainable=trainable)
+        nn = tf.layers.conv1d(nn, filters=64, kernel_size=5, name='conv1_2', trainable=trainable)
+        nn = tf.layers.conv1d(nn, filters=64, kernel_size=5, name='conv1_3', trainable=trainable)
         nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2, name = 'max_pool1')
         nn = tf.layers.batch_normalization(nn, name='batchnorm_1', trainable=trainable)
 
@@ -32,29 +32,30 @@ def Conv_Dense_0001_a(DataCenter, trainable = False):
         nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2, name = 'max_pool3')
         nn = tf.layers.batch_normalization(nn, name='batchnorm_3', trainable=trainable)
 
-        nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu, name='conv4_1', trainable=trainable)
-
         # New Layers
         nn = tf.layers.dropout(nn, 0.5)
-        nn = tf.layers.conv1d(nn, filters=128, kernel_size=5, activation=tf.nn.relu, name='conv4_2')
-        nn = tf.layers.dropout(nn, 0.5)
-        nn = tf.layers.conv1d(nn, filters=128, kernel_size=5, activation=tf.nn.relu, name='conv4_3')
+
+        nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu)
+        nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu)
+        nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu)
+        nn = tf.layers.batch_normalization(nn)
 
         nn = tf.layers.flatten(nn, name='flatten_1')
-        nn = tf.layers.dropout(nn, rate=0.5)
 
-        nn = tf.layers.dense(nn, 512, activation=tf.nn.relu, name='dense_1')
         nn = tf.layers.dropout(nn, rate=0.5)
+        nn = tf.layers.batch_normalization(nn)
 
-        nn = tf.layers.dense(nn, 512, activation=tf.nn.relu, name='dense_2')
+        nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu)
         nn = tf.layers.dropout(nn, rate=0.5)
+        nn = tf.layers.batch_normalization(nn)
 
-        nn = tf.layers.dense(nn, 512, activation=tf.nn.relu, name='dense_3')
+        nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu)
         nn = tf.layers.dropout(nn, rate=0.5)
+        nn = tf.layers.batch_normalization(nn)
 
-        nn = tf.layers.dense(nn, 512, activation=tf.nn.relu, name='dense_4')
-        nn = tf.layers.dropout(nn, rate=0.5)
+        # nn = tf.layers.dense(nn, 512, activation=tf.nn.relu, name='dense_3')
+        # nn = tf.layers.dropout(nn, rate=0.5)
 
-        nn = tf.layers.dense(nn, 29, activation=tf.nn.sigmoid, name='dense_5')
+        nn = tf.layers.dense(nn, 26, activation=tf.nn.sigmoid)
 
     return nn
