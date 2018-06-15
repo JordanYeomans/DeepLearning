@@ -11,7 +11,7 @@ import DeepLearning.Tensorflow_Base_Functions.optimizers as tfOptimizers
 import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 
 
-def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save = True, min_save_acc = 0):
+def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save = True, min_save_acc = 0, noise = False):
 
     ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learning
 
@@ -104,6 +104,11 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
             print('Validation Accuracy: {}%'.format(np.round(np.mean(acc)*100,2)))
 
             acc_best = acc if acc > acc_best else acc_best
+
+            # Add Noise and Shuffle
+            if noise == True:
+                DataCenter.augment_add_noise(std_dev=0.0005)
+                DataCenter.shuffle_training_only()
 
             if save is True and acc == acc_best and acc >= min_save_acc:
                 print('Saving Model')
