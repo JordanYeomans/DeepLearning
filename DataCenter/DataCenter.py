@@ -59,6 +59,10 @@ class DataCenter():
         self.folder_path = './data/'
         self.file_prefix = ''
 
+        self.train_input_data = None
+        self.val_input_data = None
+        self.eval_input_data = None
+
         ## Graphing Parameters
         self.graph_type = 'Research'
 
@@ -277,15 +281,35 @@ class DataCenter():
 
         total_samples = self.train_samples + self.val_samples + self.eval_samples
 
-        print('Train Samples = {}({}%), Val Samples = {}({}%), Eval Samples = {}({}%)'.format(self.train_samples,
-                                                                                              np.round(
-                                                                                                  self.train_samples / total_samples * 100,
-                                                                                                  2),
-                                                                                              self.val_samples,
-                                                                                              np.round(
-                                                                                                  self.val_samples / total_samples * 100,
-                                                                                                  2),
-                                                                                              self.eval_samples,
-                                                                                              np.round(
-                                                                                                  self.eval_samples / total_samples * 100,
-                                                                                                  2)))
+        print_train_1 = self.train_samples
+        print_train_2 = np.round(self.train_samples / total_samples * 100,2)
+        print_val_1 = self.val_samples
+        print_val_2 = np.round(self.val_samples / total_samples * 100,2)
+        print_eval_1 = self.eval_samples
+        print_eval_2 = np.round(self.eval_samples / total_samples * 100,2)
+
+        print('Train Samples = {}({}%), Val Samples = {}({}%), Eval Samples = {}({}%)'.format(print_train_1, print_train_2,print_val_1, print_val_2,print_eval_1, print_eval_2))
+
+    # Data Augmentation:
+    def augment_1D_left_right(self, left = 6, right = 6, step = 1):
+        print('Augmenting Data Left and Right. New Samples =')
+        self.train_input_data, self.train_output_data  = data.augment_1D_left_right(self.train_input_data, self.train_output_data, left, right, step)
+        self.print_num_samples()
+
+    def augment_1D_squeeze_stretch(self, squeeze=0.98, stretch=1.02, steps=3):
+        print('Augmenting - Squeeze & Stretch \n Inefficient Implementation, perform before other Augmentation')
+        self.train_input_data, self.train_output_data = data.augment_1D_squeeze_stretch(self.train_input_data, self.train_output_data, squeeze, stretch, steps)
+        self.print_num_samples()
+
+    def augment_1D_squash_pull(self, squash= 0.98, pull = 1.02, steps = 10, type = 'multiply'):
+        print('Augmenting - Squash & Pull')
+        self.train_input_data, self.train_output_data = data.augment_1D_squash_pull(self.train_input_data, self.train_output_data, squash, pull, steps, type)
+        self.print_num_samples()
+
+    def augment_add_noise(self, std_dev=0.01):
+        print('Augmenting - Adding Gausian Noise')
+        self.train_input_data = data.augment_add_noise(self.train_input_data, std_dev)
+
+    def shuffle_training_only(self):
+        print('Shuffling Training Data')
+        self.train_input_data, self.train_output_data = data.shuffle_input_output(self.train_input_data,self.train_output_data)

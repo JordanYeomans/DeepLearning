@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import time
+import matplotlib.pyplot as plt
+import scipy.signal
+import skimage.transform
 
 def load_data(filepath):
     return np.array(pd.read_csv(filepath, header=None))
@@ -147,3 +150,146 @@ def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
             new_output_data[i] = np.array([output_data[batch_size * i : batch_size * (i+1)]])
 
     return new_input_data, new_output_data
+
+def augment_1D_left_right(input_data, output_data, left, right, step):
+
+    assert (left + right)%step == 0, 'Non integer steps. Consider using integers and step = 1'
+
+    augment_range = np.arange(-left, right+step, step)
+    augmented_data = numpy_zeros_extended(input_data, augment_range.shape[0], type='extend_dim_1')
+    new_output_data = numpy_zeros_extended(output_data, augment_range.shape[0], type='extend_dim_1')
+
+    num_samples = input_data.shape[0]
+
+    count = 0
+
+    for i in augment_range:
+
+        sample_start = count * num_samples
+        sample_end = (count + 1) * num_samples
+
+        if i < 0:
+            new_data = input_data[:, np.abs(i):]
+            augmented_data[sample_start:sample_end, :new_data.shape[1]] = new_data
+        elif i > 0:
+            new_data = input_data[:, :-np.abs(i)]
+            augmented_data[sample_start:sample_end, i:] = new_data
+        else:
+            augmented_data[sample_start:sample_end, i:] = input_data
+
+        new_output_data[sample_start:sample_end,:] = output_data
+
+        count += 1
+
+    assert len(np.where(~augmented_data.any(axis=1))[0]) == 0, 'Input Data contains Data that is all Zeros'
+
+    return augmented_data, new_output_data
+
+def augment_1D_squeeze_stretch(input_data, output_data, squeeze, stretch, steps):
+
+
+    squeeze = np.floor(input_data.shape[1] * squeeze)
+    squeeze = squeeze - input_data.shape[1]
+
+    stretch = np.ceil(input_data.shape[1] * stretch)
+    stretch = stretch - input_data.shape[1]
+
+    step = (stretch-squeeze)/steps
+    augment_range = np.arange(squeeze, squeeze + (steps * (step+1)), step)
+
+    augmented_data = numpy_zeros_extended(input_data, augment_range.shape[0], type='extend_dim_1')
+    new_output_data = numpy_zeros_extended(output_data, augment_range.shape[0], type='extend_dim_1')
+
+    num_samples = input_data.shape[0]
+    orig_signal_len = input_data.shape[1]
+    count = 0
+
+    for i in augment_range:
+        signal_num=0
+        sample_start = count * num_samples
+        sample_end = (count + 1) * num_samples
+
+        for sample in range(sample_start,sample_end):
+
+            signal = input_data[signal_num]
+
+            if i < 0:
+                signal = np.concatenate([signal, np.zeros((int(np.abs(i)),1))])
+            elif i> 0:
+                signal = signal[:-int(i)]
+
+            if i == 0:
+                signal = signal
+
+            new_data = skimage.transform.resize(signal, (orig_signal_len,1))
+
+            augmented_data[sample] = new_data
+            new_output_data[sample] = output_data[signal_num]
+
+            signal_num += 1
+        count += 1
+
+    assert len(np.where(~augmented_data.any(axis=1))[0]) == 0, 'Input Data contains Data that is all Zeros'
+
+    return augmented_data, new_output_data
+
+def augment_1D_squash_pull(input_data, output_data, squash, pull, steps, type = 'multiply'):
+
+    step = (pull - squash) / steps
+
+    augment_range = np.arange(squash, squash+(steps*step), step)
+    augment_range = np.concatenate([augment_range, np.array(0).reshape(-1)])
+
+    augmented_data = numpy_zeros_extended(input_data, augment_range.shape[0], type='extend_dim_1')
+    new_output_data = numpy_zeros_extended(output_data, augment_range.shape[0], type='extend_dim_1')
+
+    num_samples = input_data.shape[0]
+    count = 0
+
+    zeros = np.where(input_data == 0)
+
+    print(augmented_data.shape)
+    for i in augment_range:
+
+        sample_start = count * num_samples
+        sample_end = (count + 1) * num_samples
+
+        if i != 0:
+            if type == 'multiply':
+                augmented_data[sample_start:sample_end] = np.multiply(input_data,i)
+            elif type == 'add':
+                augmented_data[sample_start:sample_end] = np.add(input_data, i-1)
+            new_output_data[sample_start:sample_end] = output_data
+        else:
+            augmented_data[sample_start:sample_end] = input_data
+            new_output_data[sample_start:sample_end] = output_data
+
+        augmented_data[sample_start:sample_end][zeros] = 0
+        count += 1
+
+    assert len(np.where(~augmented_data.any(axis=1))[0]) == 0, 'Input Data contains Data that is all Zeros'
+
+    return augmented_data, new_output_data
+
+def augment_add_noise(input_data, std_dev):
+
+    zeros = np.where(input_data==0)
+
+    noise = np.random.normal(loc = 0, scale=std_dev, size=(input_data.shape[0], input_data.shape[1],1))
+    input_data = np.add(input_data,noise)
+
+    input_data[zeros] = 0
+
+    return input_data
+
+def numpy_zeros_extended(data, dimension_multiplier, type = 'extend_dim_1'):
+
+    shape = None
+    if type == 'extend_dim_1':
+        shape = np.array(data.shape).flatten()
+        shape[0] = shape[0] * dimension_multiplier
+
+    if type == 'new_dim_1':
+        shape = (dimension_multiplier,) + data.shape
+
+    return np.zeros(shape)
