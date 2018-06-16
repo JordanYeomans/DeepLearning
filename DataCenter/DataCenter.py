@@ -53,7 +53,6 @@ class DataCenter():
         self.transfer_var_names = None
         self.transfer_var_values = None
 
-
         # Data
         self.all_data = None
         self.folder_path = './data/'
@@ -62,6 +61,8 @@ class DataCenter():
         self.train_input_data = None
         self.val_input_data = None
         self.eval_input_data = None
+
+        self.one_hot_labels = None
 
         ## Graphing Parameters
         self.graph_type = 'Research'
@@ -153,6 +154,12 @@ class DataCenter():
         self.train_output_data = np.load(path + 'training_output_data.npy')
         self.val_output_data = np.load(path + 'validation_output_data.npy')
         self.eval_output_data = np.load(path + 'evaluation_output_data.npy')
+
+        #try:
+        self.one_hot_labels = data.load_data(self.folder_path + 'one_hot_labels.csv')
+        # print(self.one_hot_labels)
+        # except:
+        #     'No one-hot labels'
 
         self.print_num_samples()
 
