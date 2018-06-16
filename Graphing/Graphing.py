@@ -6,6 +6,7 @@ import report_writing_functions.research.figures as research
 import report_writing_functions.academic.figures as academic
 import DeepLearning.DataCenter.DataProcessing as data
 
+
 class Graph():
     def __init__(self):
         self.graph_type = 'Research'
@@ -71,6 +72,7 @@ def correlation_train_val_eval(DataCenter, plot_outputs = None, samples = 1000, 
 
     return plot
 
+
 def train_val_eval_samples(DataCenter, samples = 4, shuffle = True):
 
     # Initiate Graph Data
@@ -113,6 +115,42 @@ def train_val_eval_samples(DataCenter, samples = 4, shuffle = True):
     return plot
 
 
+def train_val_samples(DataCenter, samples = 4, shuffle = True):
+
+    # Initiate Graph Data
+    GraphData = graph_data(DataCenter)
+
+    # Shuffle Data
+    if shuffle is True:
+        shuffle_data_samples(GraphData)
+
+    # Restrict Samples
+    restrict_data_samples(GraphData, samples)
+
+    # Define Graph Type
+    if GraphData.graph_type == 'Research':
+        plot = research.SubPlot(2, 2)
+
+    elif GraphData.graph_type == 'Academic':
+        plot = academic.SubPlot(2, 2)
+
+    # Plot Input Data
+    for i in range(samples):
+        plot.current_plot = 1
+        plot.add_subplot_data(GraphData.train_input_data[i], add_data_to=1, title='Training Input Examples')
+
+        plot.current_plot = 2
+        plot.add_subplot_data(GraphData.val_input_data[i], add_data_to=2, title='Validation Input Examples')
+
+        plot.current_plot = 3
+        plot.add_subplot_data(GraphData.train_output_data[i], add_data_to=3, title='Training Output Examples')
+
+        plot.current_plot = 4
+        plot.add_subplot_data(GraphData.val_output_data[i], add_data_to=4, title='Validation Output Examples')
+
+    return plot
+
+
 def reshape_channel(data):
     channels = data.shape[-1]
 
@@ -124,6 +162,7 @@ def reshape_channel(data):
         raise 'To Do: Code needed for more than 1 dimension'
 
     return data
+
 
 def graph_data(DataCenter):
     ''' Object to copy data from DataCenter.
@@ -160,6 +199,7 @@ def graph_data(DataCenter):
 
     return GraphData
 
+
 def restrict_data_samples(GraphData, samples):
     ''' Restrict the number of data samples
     '''
@@ -170,6 +210,7 @@ def restrict_data_samples(GraphData, samples):
     GraphData.val_output_data = GraphData.val_output_data[:samples]
     GraphData.eval_input_data = GraphData.eval_input_data[:samples]
     GraphData.eval_output_data = GraphData.eval_output_data[:samples]
+
 
 def restrict_prediction_samples(GraphData, samples):
     ''' Restrict the number of prediction samples
@@ -193,6 +234,7 @@ def restrict_prediction_samples(GraphData, samples):
     else:
         GraphData.eval_true = GraphData.eval_true[:GraphData.eval_input_data.shape[0]]
         GraphData.eval_predictions = GraphData.eval_predictions[:GraphData.eval_input_data.shape[0]]
+
 
 def shuffle_data_samples(GraphData):
     ''' Shuffle Data
