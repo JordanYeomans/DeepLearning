@@ -167,6 +167,10 @@ class DataCenter():
     def scale_input(self, scale = None):
         self.all_input_data, self.input_scale = data.scale_input(self.all_input_data, scale=scale)
 
+    def scale_multi_chan_input(self, scale = None):
+        self.all_input_data, self.input_scale = data.scale_multi_chan_input(self.all_input_data, scale=scale)
+
+
     def reshape_1D_input(self):
         self.all_input_data = data.reshape_1D_input(self.all_input_data)
 

@@ -34,6 +34,23 @@ def scale_input(data, scale = None):
 
     return data, scale
 
+def scale_multi_chan_input(data, scale = None):
+
+    channels = data.shape[2]
+
+    scale_sheet = []
+
+    if scale == None:
+
+        for channel in range(channels):
+            scale_min = np.abs(np.min(data[:, :, channel]))
+            scale_max = np.abs(np.max(data[:, :, channel]))
+            scale = np.max([scale_min, scale_max])
+            data[:, :, channel] = np.divide(data[:, :, channel],scale)
+            scale_sheet.append(scale)
+
+    return data, scale_sheet
+
 
 def one_hot_output(data, column, concat=True):
     '''This function converts an output column to a 1 hot array
@@ -148,7 +165,7 @@ def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
         for i in range(num_batches):
             new_input_data[i] = np.array([input_data[batch_size * i : batch_size * (i+1)]])
             new_output_data[i] = np.array([output_data[batch_size * i : batch_size * (i+1)]])
-
+            print('Splitting into batches {}%'.format(np.round(i/num_batches*100), 2))
     return new_input_data, new_output_data
 
 def augment_1D_left_right(input_data, output_data, left, right, step):
