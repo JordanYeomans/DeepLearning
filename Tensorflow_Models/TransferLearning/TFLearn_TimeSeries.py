@@ -12,7 +12,7 @@ def Conv_Dense_0001_a(DataCenter, trainable = False):
         print('Trainable is set to False for Transfer Layers')
 
     scope = DataCenter.transfer_model_scope
-
+    last_layer = DataCenter.train_output_data.shape[1]
     with tf.variable_scope(scope):
         x = DataCenter.x_placeholder
 
@@ -32,7 +32,7 @@ def Conv_Dense_0001_a(DataCenter, trainable = False):
         nn = tf.layers.max_pooling1d(nn, pool_size=4, strides=2, name = 'max_pool3')
         nn = tf.layers.batch_normalization(nn, name='batchnorm_3', trainable=trainable)
 
-        # New Layers
+        #New Layers
         nn = tf.layers.dropout(nn, 0.5)
 
         nn = tf.layers.conv1d(nn, filters=256, kernel_size=5, activation=tf.nn.relu)
@@ -53,9 +53,10 @@ def Conv_Dense_0001_a(DataCenter, trainable = False):
         nn = tf.layers.dropout(nn, rate=0.5)
         nn = tf.layers.batch_normalization(nn)
 
-        # nn = tf.layers.dense(nn, 512, activation=tf.nn.relu, name='dense_3')
-        # nn = tf.layers.dropout(nn, rate=0.5)
+        nn = tf.layers.dense(nn, 4096, activation=tf.nn.relu)
+        nn = tf.layers.dropout(nn, rate=0.5)
+        nn = tf.layers.batch_normalization(nn)
 
-        nn = tf.layers.dense(nn, 26, activation=tf.nn.sigmoid)
+        nn = tf.layers.dense(nn, last_layer, activation=tf.nn.sigmoid, name='dense_3')
 
     return nn
