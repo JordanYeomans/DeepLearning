@@ -285,6 +285,14 @@ class DataCenter():
         self.reset_val_batches()
         self.reset_eval_batches()
 
+    def clear_memory(self):
+        self.train_input_data = None
+        self.train_output_data = None
+        self.val_input_data = None
+        self.val_output_data = None
+        self.eval_input_data = None
+        self.eval_output_data = None
+
     def print_num_samples(self):
         self.train_samples = self.train_input_data.shape[0]
         self.val_samples = self.val_input_data.shape[0]
