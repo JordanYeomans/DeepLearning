@@ -155,11 +155,10 @@ class DataCenter():
         self.val_output_data = np.load(path + 'validation_output_data.npy')
         self.eval_output_data = np.load(path + 'evaluation_output_data.npy')
 
-        #try:
-        self.one_hot_labels = data.load_data(self.folder_path + 'one_hot_labels.csv')
-        # print(self.one_hot_labels)
-        # except:
-        #     'No one-hot labels'
+        try:
+            self.one_hot_labels = data.load_data(self.folder_path + self.file_prefix + 'one_hot_labels.csv')
+        except:
+            'No one-hot labels'
 
         self.print_num_samples()
 
@@ -178,7 +177,7 @@ class DataCenter():
         self.all_output_data, self.one_hot_labels = data.one_hot_output(self.all_output_data, column, concat=concat)
 
         # Save one_hot_labels
-        np.savetxt(self.data_location + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
+        np.savetxt(self.data_location + self.file_prefix + '_one_hot_labels.csv', self.one_hot_labels, delimiter=',')
 
     def scale_outputs(self):
         self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data)
