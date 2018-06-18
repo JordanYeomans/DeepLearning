@@ -21,11 +21,13 @@ def validate_1hot_outputs(oh_labels):
             assert label[j] == base[j], 'One Hot Output Labels are different'
 
 
-def combine_1D_Onehot_DC(input_arrays, output_arrays, samples):
+def combine_1D_Onehot_DC(input_arrays, output_arrays, samples=None):
 
     input_arrays = np.array(input_arrays)
     output_arrays = np.array(output_arrays)
 
+    if samples is None:
+        samples = input_arrays.shape[1]
     new_input = np.zeros((samples, input_arrays.shape[2], input_arrays.shape[0]))
     new_output = np.zeros((samples, output_arrays.shape[2]))
 
@@ -44,7 +46,7 @@ def combine_1D_Onehot_DC(input_arrays, output_arrays, samples):
     ## Fill Samples
     # Iterate over all samples
     for sample in range(samples):
-        print('{} Samples out of {}'.format(sample, samples))
+        print('{} Samples out of {}'.format(sample+1, samples))
         rand_output = np.random.randint(0, new_output.shape[1])
 
         # Iterate over all channels
