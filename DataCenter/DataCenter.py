@@ -143,6 +143,25 @@ class DataCenter():
         np.save(path + 'validation_output_data.npy', self.val_output_data)
         np.save(path + 'evaluation_output_data.npy', self.eval_output_data)
 
+    def save_train_data(self):
+        path = self.folder_path + self.file_prefix
+        print('Savings Training data to {}'.format(self.folder_path))
+        np.save(path + 'training_input_data.npy', self.train_input_data)
+        np.save(path + 'training_output_data.npy', self.train_output_data)
+
+    def save_val_data(self):
+        path = self.folder_path + self.file_prefix
+        print('Savings Validation data to {}'.format(self.folder_path))
+        np.save(path + 'validation_input_data.npy', self.val_input_data)
+        np.save(path + 'validation_output_data.npy', self.val_output_data)
+
+    def save_eval_data(self):
+        path = self.folder_path + self.file_prefix
+        print('Savings Validation data to {}'.format(self.folder_path))
+        np.save(path + 'evaluation_input_data.npy', self.eval_input_data)
+        np.save(path + 'evaluation_output_data.npy', self.eval_output_data)
+
+
     def load_data(self):
         path = self.folder_path + self.file_prefix
 
@@ -177,7 +196,8 @@ class DataCenter():
         self.all_output_data, self.one_hot_labels = data.one_hot_output(self.all_output_data, column, concat=concat)
 
         # Save one_hot_labels
-        np.savetxt(self.data_location + self.file_prefix + '_one_hot_labels.csv', self.one_hot_labels, delimiter=',')
+        np.savetxt(self.data_location + self.file_prefix + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
+        np.savetxt(self.folder_path + self.file_prefix + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
 
     def scale_outputs(self):
         self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data)
