@@ -53,6 +53,12 @@ class DataCenter():
         self.transfer_var_names = None
         self.transfer_var_values = None
 
+        # Training History
+        self.loss_train_log = None
+        self.loss_val_log = None
+        self.acc_train_log = None
+        self.acc_val_log = None
+
         # Data
         self.all_data = None
         self.folder_path = './data/'
@@ -161,7 +167,6 @@ class DataCenter():
         np.save(path + 'evaluation_input_data.npy', self.eval_input_data)
         np.save(path + 'evaluation_output_data.npy', self.eval_output_data)
 
-
     def load_data(self):
         path = self.folder_path + self.file_prefix
 
@@ -187,7 +192,6 @@ class DataCenter():
 
     def scale_multi_chan_input(self, scale = None):
         self.all_input_data, self.input_scale = data.scale_multi_chan_input(self.all_input_data, scale=scale)
-
 
     def reshape_1D_input(self):
         self.all_input_data = data.reshape_1D_input(self.all_input_data)
@@ -328,7 +332,43 @@ class DataCenter():
 
         print('Train Samples = {}({}%), Val Samples = {}({}%), Eval Samples = {}({}%)'.format(print_train_1, print_train_2,print_val_1, print_val_2,print_eval_1, print_eval_2))
 
-    # Data Augmentation:
+    ## Neural Network Training History
+    # Loss History
+    def initialize_loss_log(self):
+        self.loss_train_log = np.zeros((self.epochs,self.num_train_batches))
+        self.loss_val_log = np.zeros(self.epochs)
+
+    def update_loss_train_log(self, loss, epoch_num, batch_num):
+        self.loss_train_log[epoch_num][batch_num] = loss
+
+    def update_loss_val_log(self, loss, epoch_num):
+        self.loss_val_log[epoch_num] = loss
+
+    # Prediction Accuracy History
+    def initialize_acc_log(self):
+        self.acc_train_log = np.zeros((self.epochs,self.num_train_batches))
+        self.acc_val_log = np.zeros(self.epochs)
+
+    def update_acc_train_log(self, acc, epoch_num, batch_num):
+        self.acc_train_log[epoch_num][batch_num] = acc
+
+    def update_acc_val_log(self, acc, epoch_num):
+        self.acc_val_log[epoch_num] = acc
+
+    def initialize_all_logs(self):
+        self.initialize_loss_log()
+        self.initialize_acc_log()
+
+    def save_history_logs(self, log_prefix = ''):
+        if self.loss_train_log is not None:
+            np.savetxt(self.model_save_folder + log_prefix + 'Train_Loss_Log.csv', self.loss_train_log, delimiter=',', fmt='%1.4f')
+            np.savetxt(self.model_save_folder + log_prefix + 'Val_Loss_Log.csv', self.loss_val_log, delimiter=',', fmt='%1.4f')
+
+        if self.acc_train_log is not None:
+            np.savetxt(self.model_save_folder + log_prefix + 'Train_Acc_Log.csv', self.acc_train_log, delimiter=',', fmt='%1.4f')
+            np.savetxt(self.model_save_folder + log_prefix + 'Val_Acc_Log.csv', self.acc_val_log, delimiter=',', fmt='%1.4f')
+
+    ## Data Augmentation:
     def augment_1D_left_right(self, left = 6, right = 6, step = 1):
         print('Augmenting Data Left and Right. New Samples =')
         self.train_input_data, self.train_output_data  = data.augment_1D_left_right(self.train_input_data, self.train_output_data, left, right, step)
