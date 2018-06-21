@@ -10,10 +10,10 @@ import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 
 import matplotlib.pyplot as plt
 
-def train_categorical_network(DataCenter, model, save = True, load_model = False, min_save_acc = 0, record_train_acc = False):
+def train_categorical_network(DataCenter, model, save = True, load_model = False, min_save_acc = 0):
 
     cost = tfCost.categorical_cross_entropy(DataCenter, model)
-    optimizer = tfOptimizers.adam_optimizer(DataCenter, cost)
+    learning_step, optimizer = tfOptimizers.adam_optimizer_w_lr_decay(DataCenter, cost)
     saver = tf.train.Saver()
 
     x = DataCenter.x_placeholder
@@ -56,7 +56,7 @@ def train_categorical_network(DataCenter, model, save = True, load_model = False
 
                 update = batch/DataCenter.num_train_batches
                 update_prog_bar(prog_bar, update)
-
+            print('\n Learning rate: %f' % (sess.run(learning_step._lr_t)))
             print('\n Epoch', epoch, 'completed out of', epochs, 'loss:', c)
 
             # Calculate Validation Accuracy

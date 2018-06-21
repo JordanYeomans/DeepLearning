@@ -11,14 +11,14 @@ import DeepLearning.Tensorflow_Base_Functions.optimizers as tfOptimizers
 import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 
 
-def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save = True, min_save_acc = 0, noise = False):
+def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save = True, min_save_acc = 0, noise = False, log_train_acc = False):
 
     ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learning
 
     '''
 
     cost = tfCost.categorical_cross_entropy(DataCenter, model)
-    optimizer = tfOptimizers.adam_optimizer(DataCenter, cost)
+    learning_step, optimizer = tfOptimizers.adam_optimizer_w_lr_decay(DataCenter, cost)
     saver = tf.train.Saver()
 
     x = DataCenter.x_placeholder
@@ -32,6 +32,8 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
     val_y_all = DataCenter.val_output_batches
 
     acc_best = 0
+
+    DataCenter.initialize_all_logs()
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -81,8 +83,6 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
 
                 print('Loaded {}% of Weights'.format(np.round(i/len(transfer_layers)*100)))
 
-        ##########_________________###############
-        ## Assign Weights For transfer Layers
 
         # Train Network
         for epoch in range(epochs):
@@ -94,23 +94,37 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
 
                 _, c = sess.run([optimizer, cost], feed_dict={x: epoch_x, y: epoch_y})
 
+                # Log Training Loss
+                DataCenter.update_loss_train_log(c, epoch, batch)
+
+                if log_train_acc == True:
+                    train_acc = tfEval.prediction_accuracy(DataCenter, model, DataCenter.train_input_batches, DataCenter.train_output_batches)
+                    DataCenter.update_acc_train_log(train_acc, epoch, batch)
+
                 update = batch/DataCenter.num_train_batches
                 update_prog_bar(prog_bar, update)
 
-            print('\n Epoch', epoch, 'completed out of', epochs, 'loss:', c)
+            print('\n Learning rate: %f' % (sess.run(learning_step._lr_t)))
+
+            print('Epoch', epoch, 'completed out of', epochs, 'loss:', c)
 
             # Calculate Validation Accuracy
-            acc = tfEval.prediction_accuracy(DataCenter, model, val_x_all, val_y_all)
-            print('Validation Accuracy: {}%'.format(np.round(np.mean(acc)*100,2)))
+            val_acc = tfEval.prediction_accuracy(DataCenter, model, val_x_all, val_y_all)
+            print('Validation Accuracy: {}%'.format(np.round(np.mean(val_acc)*100,2)))
 
-            acc_best = acc if acc > acc_best else acc_best
+            acc_best = val_acc if val_acc > acc_best else acc_best
+            print('Best Accuracy: {}%'.format(np.round(np.mean(acc_best) * 100, 2)))
+
+            # Update History Logs:
+            DataCenter.update_acc_val_log(val_acc, epoch)
+            DataCenter.save_history_logs()
 
             # Add Noise and Shuffle
             if noise == True:
                 DataCenter.augment_add_noise(std_dev=0.0005)
                 DataCenter.shuffle_training_only()
 
-            if save is True and acc == acc_best and acc >= min_save_acc:
+            if save is True and val_acc == acc_best and val_acc >= min_save_acc:
                 print('Saving Model')
                 min_save_acc += 0.01
                 saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)

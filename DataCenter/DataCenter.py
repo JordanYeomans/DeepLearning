@@ -49,6 +49,11 @@ class DataCenter():
         self.x_placeholder = None
         self.y_placeholder = None
 
+        # Learning Rate Decay
+        self.lr_start = 0.00001
+        self.lr_decay_rate = 0.95
+        self.lr_step_rate = 25
+
         # Transfer Learning
         self.transfer_var_names = None
         self.transfer_var_values = None
