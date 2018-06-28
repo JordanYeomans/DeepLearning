@@ -310,3 +310,28 @@ def numpy_zeros_extended(data, dimension_multiplier, type = 'extend_dim_1'):
         shape = (dimension_multiplier,) + data.shape
 
     return np.zeros(shape)
+
+def restrict_to_ids(all_input_data, all_output_data, ids, column):
+
+    for i in range(len(ids)):
+
+        id_pos = np.array(np.where(all_output_data[:,column] == ids[i])[0])
+
+        if i == 0:
+            id_record = id_pos
+        else:
+            id_record = np.concatenate([id_record, id_pos], axis = 0)
+
+    all_input_data = all_input_data[id_record]
+    all_output_data = all_output_data[id_record]
+
+    return all_input_data, all_output_data
+
+def integrate_input_curve(all_input_data, col_start = None, col_end = None):
+
+    all_output_data = np.zeros((all_input_data.shape[0], all_input_data.shape[2]))
+
+    for i in range(all_input_data.shape[2]):
+        all_output_data[:, i] = np.sum(all_input_data[:, col_start:col_end, i], axis=1)
+
+    return all_output_data
