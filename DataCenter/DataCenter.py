@@ -337,6 +337,11 @@ class DataCenter():
 
         print('Train Samples = {}({}%), Val Samples = {}({}%), Eval Samples = {}({}%)'.format(print_train_1, print_train_2,print_val_1, print_val_2,print_eval_1, print_eval_2))
 
+    def restrict_to_ids(self,ids, column=0):
+        print(self.all_output_data.shape)
+        self.all_input_data, self.all_output_data = data.restrict_to_ids(self.all_input_data, self.all_output_data, ids, column)
+        print(self.all_output_data.shape)
+
     ## Neural Network Training History
     # Loss History
     def initialize_loss_log(self):
@@ -396,3 +401,7 @@ class DataCenter():
     def shuffle_training_only(self):
         print('Shuffling Training Data')
         self.train_input_data, self.train_output_data = data.shuffle_input_output(self.train_input_data,self.train_output_data)
+
+    ## Manipulating Data
+    def integrate_input_curve(self, col_start = None, col_end = None):
+        self.all_output_data = data.integrate_input_curve(self.all_input_data, col_start=col_start, col_end=col_end)
