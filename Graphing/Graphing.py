@@ -6,7 +6,6 @@ import report_writing_functions.research.figures as research
 import report_writing_functions.academic.figures as academic
 import DeepLearning.DataCenter.DataProcessing as data
 
-
 class Graph():
     def __init__(self):
         self.graph_type = 'Research'
@@ -38,6 +37,7 @@ def correlation_train_val_eval(DataCenter, plot_outputs = None, samples = 1000, 
     # Restrict Samples
     restrict_prediction_samples(GraphData, samples)
 
+
     # Todo Shuffle
     if plot_outputs == None:
         # Define Graph Type
@@ -53,7 +53,10 @@ def correlation_train_val_eval(DataCenter, plot_outputs = None, samples = 1000, 
 
         plot.add_subplot_data(GraphData.train_true, GraphData.train_predictions, type='scatter')
         plot.add_subplot_data(GraphData.val_true, GraphData.val_predictions, type='scatter')
-        plot.add_subplot_data(GraphData.eval_true, GraphData.eval_predictions, type='scatter')
+        try:
+            plot.add_subplot_data(GraphData.eval_true, GraphData.eval_predictions, type='scatter')
+        except:
+            print('No Evaluation Data')
 
     else:
         # Define Graph Type
@@ -68,7 +71,10 @@ def correlation_train_val_eval(DataCenter, plot_outputs = None, samples = 1000, 
 
             plot.add_subplot_data(GraphData.train_true[:,column], GraphData.train_predictions[:,column], type='scatter')
             plot.add_subplot_data(GraphData.val_true[:,column], GraphData.val_predictions[:,column], type='scatter')
-            plot.add_subplot_data(GraphData.eval_true[:,column], GraphData.eval_predictions[:,column], type='scatter')
+            try:
+                plot.add_subplot_data(GraphData.eval_true[:,column], GraphData.eval_predictions[:,column], type='scatter')
+            except:
+                print('No Evaluation Data')
 
     return plot
 
