@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-
 import matplotlib.pyplot as plt
 
 from pylab import *
@@ -11,13 +10,48 @@ import DeepLearning.Tensorflow_Base_Functions.optimizers as tfOptimizers
 import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 
 
-def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save = True, min_save_acc = 0, noise = False, log_train_acc = False):
+def extract_variables(DataCenter):
 
+    with tf.Session() as sess:
+        # Load Model
+        new_saver = tf.train.import_meta_graph(DataCenter.model_load_folder + DataCenter.model_load_name + '.meta')
+        new_saver.restore(sess, tf.train.latest_checkpoint(DataCenter.model_load_folder))
+
+        # Get All Variables
+        variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+
+        var_names = []
+        var_values = []
+
+        for i in range(np.array(variables).shape[0]):
+
+            variable = variables[i]
+
+            name = variable.name
+            value = sess.run(variable)
+
+            var_names.append(name[name.find('/'):])
+            var_values.append(value)
+
+    sess.close()
+    tf.reset_default_graph()
+
+    DataCenter.transfer_var_names = np.array(var_names)
+    DataCenter.transfer_var_values = var_values
+
+    return
+
+
+def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save=True, min_save_acc=0, noise=False, log_train_acc=False, balance_one_hot=True):
     ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learning
-
     '''
 
-    cost = tfCost.categorical_cross_entropy(DataCenter, model)
+    if DataCenter.set_cost_function == 'categorical_cross_entropy':
+        cost = tfCost.categorical_cross_entropy(DataCenter, model)
+
+    elif DataCenter.set_cost_function == 'mse':
+        cost = tfCost.mean_squared_error(DataCenter, model)
+
     learning_step, optimizer = tfOptimizers.adam_optimizer_w_lr_decay(DataCenter, cost)
     saver = tf.train.Saver()
 
@@ -25,13 +59,12 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
     y = DataCenter.y_placeholder
 
     epochs = DataCenter.epochs
-
     prog_bar = new_prog_bar()
-
-    val_x_all = DataCenter.val_input_batches
-    val_y_all = DataCenter.val_output_batches
-
     acc_best = 0
+    val_mse_best = 10000
+    save_state = False
+
+    early_stopping = DataCenter.early_stopping
 
     DataCenter.initialize_all_logs()
 
@@ -39,8 +72,6 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
         sess.run(tf.global_variables_initializer())
 
         print("Transfer Learning - Loading Weights - NO LSTM's yet")
-
-        ##########_________________###############
         ## Assign Weights For transfer Layers
         for i in range(len(transfer_layers)):
             # Get Layer Type
@@ -49,7 +80,6 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
             with tf.variable_scope(DataCenter.transfer_model_scope + '/' + transfer_layers[i], reuse=True):
                 # Convolution or Dense Layers
                 if type == 'conv' or type == 'dense':
-
                     weight = tf.get_variable('kernel')
                     bias = tf.get_variable('bias')
 
@@ -83,7 +113,6 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
 
                 print('Loaded {}% of Weights'.format(np.round(i/len(transfer_layers)*100)))
 
-
         # Train Network
         for epoch in range(epochs):
 
@@ -105,60 +134,58 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
                 update_prog_bar(prog_bar, update)
 
             print('\n Learning rate: %f' % (sess.run(learning_step._lr_t)))
-
             print('Epoch', epoch, 'completed out of', epochs, 'loss:', c)
 
-            # Calculate Validation Accuracy
-            val_acc = tfEval.prediction_accuracy(DataCenter, model, val_x_all, val_y_all)
-            print('Validation Accuracy: {}%'.format(np.round(np.mean(val_acc)*100,2)))
+            # Epochs Between Validation Checks
+            if (epoch+1) % DataCenter.recalc_eval == 0:
 
-            acc_best = val_acc if val_acc > acc_best else acc_best
-            print('Best Accuracy: {}%'.format(np.round(np.mean(acc_best) * 100, 2)))
+                # Evaluation Validation Accuracy
+                if DataCenter.eval_metric == 'best_val_accuracy':
+                    val_acc = tfEval.prediction_accuracy(DataCenter, model, DataCenter.val_input_batches, DataCenter.val_output_batches)
+                    acc_best = val_acc if val_acc > acc_best else acc_best
+                    # Update History Logs:
+                    DataCenter.update_acc_val_log(val_acc, epoch)
+                    DataCenter.save_history_logs()
+                    print('Validation Accuracy: {}%'.format(np.round(np.mean(val_acc) * 100, 2)))
+                    print('Best Accuracy: {}%'.format(np.round(np.mean(acc_best) * 100, 2)))
 
-            # Update History Logs:
-            DataCenter.update_acc_val_log(val_acc, epoch)
-            DataCenter.save_history_logs()
+                    if val_acc == acc_best and val_acc >= min_save_acc:
+                        save_state = True
+                        min_save_acc = val_acc + DataCenter.save_network_increment  # Increment Save accuracy (Default 0.01)
+                    # Update Save State
+
+                elif DataCenter.eval_metric == 'mse':
+                    val_mse = tfEval.mse(DataCenter, tfCost.mean_squared_error(DataCenter, model))
+                    val_mse_best = val_mse if val_mse < val_mse_best else val_mse_best
+                    if val_mse == val_mse_best and val_mse <= DataCenter.max_save_mse:
+                        save_state = True
+                        DataCenter.max_save_mse = val_mse - DataCenter.save_network_increment  # Increment Save accuracy (Default 0.01)
+                        print(DataCenter.max_save_mse)
+                        early_stopping = DataCenter.early_stopping
+                    else:
+                        early_stopping -= 1
+
+                    print('Validation MSE: {}'.format(np.round(val_mse, 8)))
+                    print('Best MSE: {}'.format(np.round(val_mse_best, 8)))
+
+            # Save Model
+            if save is True and save_state is True:
+                print('Saving Model Based on {}'.format(DataCenter.eval_metric))
+                saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)
+                save_state = False
 
             # Add Noise and Shuffle
             if noise == True:
                 DataCenter.augment_add_noise(std_dev=0.0005)
                 DataCenter.shuffle_training_only()
 
-            if save is True and val_acc == acc_best and val_acc >= min_save_acc:
-                print('Saving Model')
-                min_save_acc += 0.01
-                saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)
+            # Balance data for 1 hot array
+            if balance_one_hot is True and epoch % DataCenter.one_hot_balance_rate == 0:
+                DataCenter.balance_batch_for_one_hot()
+                DataCenter.reset_train_batches()
 
-        tfEval.predict_train_val_eval(DataCenter, model)
-
-
-def extract_variables(DataCenter):
-
-    with tf.Session() as sess:
-        # Load Model
-        new_saver = tf.train.import_meta_graph(DataCenter.model_load_folder + DataCenter.model_load_name + '.meta')
-        new_saver.restore(sess, tf.train.latest_checkpoint(DataCenter.model_load_folder))
-
-        # Get All Variables
-        variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-
-        var_names = []
-        var_values = []
-
-        for i in range(np.array(variables).shape[0]):
-
-            variable = variables[i]
-
-            name = variable.name
-            value = sess.run(variable)
-
-            var_names.append(name[name.find('/'):])
-            var_values.append(value)
-
-    sess.close()
-    tf.reset_default_graph()
-
-    DataCenter.transfer_var_names = np.array(var_names)
-    DataCenter.transfer_var_values = var_values
-
+            # Check for Early Stopping
+            if early_stopping == 0:
+                print('Stopping Early')
+                break
     return
