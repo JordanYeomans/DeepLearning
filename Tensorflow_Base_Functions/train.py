@@ -76,6 +76,4 @@ def train_categorical_network(DataCenter, model, save = True, load_model = False
                 min_save_acc += 0.01
                 saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)
 
-        #tfEval.predict_train_val_eval(DataCenter, model)
-
     return
