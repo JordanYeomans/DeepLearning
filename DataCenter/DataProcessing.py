@@ -34,6 +34,7 @@ def scale_input(data, scale = None):
 
     return data, scale
 
+
 def scale_multi_chan_input(data, scale = None):
 
     channels = data.shape[2]
@@ -156,6 +157,7 @@ def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
         raise 'Need to add functionality for Not 2 Input dimensions'
 
     # Create Output Batch Array
+    print(new_output_data.shape)
     if new_output_data.ndim == 3:
         new_output_data = np.zeros((num_batches, new_output_data.shape[1], new_output_data.shape[2]))
     else:
@@ -167,6 +169,7 @@ def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
             new_output_data[i] = np.array([output_data[batch_size * i : batch_size * (i+1)]])
             print('Splitting into batches {}%'.format(np.round(i/num_batches*100), 2))
     return new_input_data, new_output_data
+
 
 def augment_1D_left_right(input_data, output_data, left, right, step):
 
@@ -202,8 +205,8 @@ def augment_1D_left_right(input_data, output_data, left, right, step):
 
     return augmented_data, new_output_data
 
-def augment_1D_squeeze_stretch(input_data, output_data, squeeze, stretch, steps):
 
+def augment_1D_squeeze_stretch(input_data, output_data, squeeze, stretch, steps):
 
     squeeze = np.floor(input_data.shape[1] * squeeze)
     squeeze = squeeze - input_data.shape[1]
@@ -250,7 +253,8 @@ def augment_1D_squeeze_stretch(input_data, output_data, squeeze, stretch, steps)
 
     return augmented_data, new_output_data
 
-def augment_1D_squash_pull(input_data, output_data, squash, pull, steps, type = 'multiply'):
+
+def augment_1D_squash_pull(input_data, output_data, squash, pull, steps, type='multiply'):
 
     step = (pull - squash) / steps
 
@@ -288,6 +292,7 @@ def augment_1D_squash_pull(input_data, output_data, squash, pull, steps, type = 
 
     return augmented_data, new_output_data
 
+
 def augment_add_noise(input_data, std_dev):
 
     zeros = np.where(input_data==0)
@@ -299,7 +304,8 @@ def augment_add_noise(input_data, std_dev):
 
     return input_data
 
-def numpy_zeros_extended(data, dimension_multiplier, type = 'extend_dim_1'):
+
+def numpy_zeros_extended(data, dimension_multiplier, type='extend_dim_1'):
 
     shape = None
     if type == 'extend_dim_1':
@@ -310,6 +316,7 @@ def numpy_zeros_extended(data, dimension_multiplier, type = 'extend_dim_1'):
         shape = (dimension_multiplier,) + data.shape
 
     return np.zeros(shape)
+
 
 def restrict_to_ids(all_input_data, all_output_data, ids, column):
 
@@ -327,6 +334,7 @@ def restrict_to_ids(all_input_data, all_output_data, ids, column):
 
     return all_input_data, all_output_data
 
+
 def integrate_input_curve(all_input_data, col_start = None, col_end = None):
 
     all_output_data = np.zeros((all_input_data.shape[0], all_input_data.shape[2]))
@@ -335,3 +343,163 @@ def integrate_input_curve(all_input_data, col_start = None, col_end = None):
         all_output_data[:, i] = np.sum(all_input_data[:, col_start:col_end, i], axis=1)
 
     return all_output_data
+
+
+def balance_batch_for_one_hot(all_input_data, all_output_data, min_samples):
+
+    current_min = all_output_data.shape[0]
+
+    temp_input_data = np.zeros_like(all_input_data)
+    temp_output_data = np.zeros_like(all_output_data)
+
+    # Get number of minimum samples
+    for i in range(all_output_data.shape[1]):
+        num_samples = np.array(np.where(all_output_data[:,i] == 1)[0]).shape[0]
+        if num_samples < current_min and num_samples > min_samples:
+            current_min = num_samples
+
+    num_samples = current_min
+    current_sample = 0
+
+    # Randomly allocate balanced number of samples
+    for i in range(all_output_data.shape[1]):
+        # Get all samples for index, shuffle and restrict
+        sample_idx = np.array(np.where(all_output_data[:, i] == 1)[0])
+        np.random.shuffle(sample_idx)
+        sample_idx = sample_idx[:num_samples]
+
+        # If enough samples, add as many as we can
+        if sample_idx.shape[0] >= num_samples:
+            temp_input_data[current_sample: current_sample + num_samples] = all_input_data[sample_idx]
+            temp_output_data[current_sample: current_sample + num_samples] = all_output_data[sample_idx]
+            current_sample += num_samples
+
+        else:
+            temp_input_data[current_sample: current_sample + sample_idx.shape[0]] = all_input_data[sample_idx]
+            temp_output_data[current_sample: current_sample + sample_idx.shape[0]] = all_output_data[sample_idx]
+            current_sample += sample_idx.shape[0]
+
+    temp_input_data = temp_input_data[:current_sample]
+    temp_output_data = temp_output_data[:current_sample]
+
+    all_input_data, all_output_data = shuffle_input_output(temp_input_data, temp_output_data)
+
+    return all_input_data, all_output_data
+
+
+def create_continuous_one_hot_array(all_output_data, val_min = None, val_max = None, one_hot_length = 10):
+    ''' This function creates a continuous valued one hot array, with even increments between each jump
+
+    Example Code:
+
+    output = np.array([0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    one_hot, true_range = data.continuous_one_hot_array(output, val_min=2, val_max=4, one_hot_length=11)
+
+    One_hot =
+        [[1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+         [1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+         [1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+         [0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
+         [0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
+         [0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0.]
+         [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+         [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]]
+
+    True Range =
+        [2.  2.2 2.4 2.6 2.8 3.  3.2 3.4 3.6 3.8 4. ]
+
+    :param all_output_data: A numpy array containing single valued outputs
+    :param val_min: Optional - If specified, values lower than this value will be put in the first index
+    :param val_max: Optional - If specified, values greater than this value will be put in the last index
+    :param one_hot_length: Desired one-hot-array length. Often a odd number to include 0 and a even final number
+    :return:
+    '''
+
+    if val_min is None:
+        val_min = np.min(all_output_data)
+    else:
+        # Any values less than the lowest value, set to the lowest value
+        print('Creating Continuous 1 Hot Array with pre-set min value. Values lower than the preset value are stored in the first index')
+        neg_idx = np.array(np.where(all_output_data < val_min)[0])
+        all_output_data[neg_idx] = val_min
+
+    if val_max is None:
+        val_max = np.max(all_output_data)
+
+    else:
+        # Any values greater than the max value, set to the max value
+        print('Creating Continuous 1 Hot Array with pre-set max value. Values lower than the preset value are stored in the last index')
+        pos_idx = np.array(np.where(all_output_data > val_max)[0])
+        all_output_data[pos_idx] = val_max
+
+    one_hot_range = val_max - val_min
+    assert one_hot_range != 0, print('All outputs are the same number')
+
+    dist_from_min = np.subtract(all_output_data, val_min)
+    perc_of_range = np.divide(dist_from_min, one_hot_range)
+
+    one_hot_idx = np.round(np.multiply(one_hot_length-1, perc_of_range),0)
+
+    continuous_one_hot = np.zeros((all_output_data.shape[0], one_hot_length))
+
+    for i in range(continuous_one_hot.shape[0]):
+        idx = int(one_hot_idx[i])
+        continuous_one_hot[i][idx] = 1
+
+    true_range = np.linspace(val_min, val_max, one_hot_length)
+    return continuous_one_hot, true_range
+
+
+def continuous_mse_loss(all_output_data, base_width, power, top_width, offset = 0.5):
+    ''' This function converts a continuous values one hot array into a trapezoidal shaped loss
+
+    example code:
+
+    output = np.array([0, 1, 2, 2.5, 3, 3.5, 4, 5])
+    one_hot, true_range = create_continuous_one_hot_array(one_hot_length=51)
+    new_output_data, shift = continuous_mse_loss(one_hot, base_width=100, top_width=5, power=2)
+
+    :param all_output_data:
+    :param base_width:
+    :param power:
+    :param top_width:
+    :return:
+    '''
+    one_hot_length = all_output_data.shape[1]
+    padding = (one_hot_length * 2) + 1
+    total_length = (padding * 2) + all_output_data.shape[1]
+
+    # Create Top Section. Scale to 0.99 to ensure argmax picks middle
+    top_section = np.ones(top_width) * 0.99
+    top_half = int(np.floor(top_width / 2))
+    top_section[top_half] = 1
+
+    # Create LHS and RHS of trapezoid
+    steps = int((base_width - top_width) / 2)
+    trap_lhs = np.linspace(0, 0.99, steps)
+    trap_rhs = np.linspace(0.99, 0, steps)
+
+    # Trapezoid power. P>1 = Convex, 0<P<1 = Concave
+    trap_lhs = np.power(trap_lhs, power)
+    trap_rhs = np.power(trap_rhs, power)
+
+    tail_zeros = (total_length - trap_lhs.shape[0] - top_width - trap_rhs.shape[0])
+    assert tail_zeros % 2 == 0, print('Ensure One Hot Array is odd in length')
+
+    # Create and fill new array
+    new_output_data = np.zeros((all_output_data.shape[0], total_length))
+    for i in range(all_output_data.shape[0]):
+        idx = np.argmax(all_output_data[i])
+
+        lhs_zeros = np.zeros(idx + padding - trap_lhs.shape[0] - int(top_width / 2))
+        rhs_zeros = np.zeros(
+            total_length - trap_rhs.shape[0] - top_section.shape[0] - trap_lhs.shape[0] - lhs_zeros.shape[0])
+
+        new_output = np.concatenate([lhs_zeros, trap_lhs, top_section, trap_rhs, rhs_zeros], axis=0)
+
+        ratio = (1-offset)
+        new_output = (new_output * ratio) + offset
+        new_output_data[i] = new_output
+
+    shift = padding
+    return new_output_data, shift
