@@ -23,9 +23,22 @@ def prediction_accuracy(DataCenter, model, x_data, y_data):
 
     return acc
 
+def mse(DataCenter, cost):
+    ''' Evaluate Mean Squared Error
+    '''
+
+    x = DataCenter.x_placeholder
+    y = DataCenter.y_placeholder
+
+    mse = np.zeros(DataCenter.val_input_batches.shape[0])
+    for i in range(DataCenter.val_input_batches.shape[0]):
+        mse[i] = cost.eval(feed_dict={x: DataCenter.val_input_batches[0], y: DataCenter.val_output_batches[0]})
+
+    mse = np.mean(mse, axis=0)
+    return mse
+
 def predict(DataCenter, model, x_data):
     ''' Prediction for x_data through NN model
-
     '''
     x = DataCenter.x_placeholder
 
@@ -39,18 +52,14 @@ def predict(DataCenter, model, x_data):
 
 def true_outputs(y_data):
     ''' For Tensorflow based mini-batches, this function concatenates different batches into a single axis
-
     '''
     true = y_data[0]
-
     for i in range(1, y_data.shape[0]):
         true = np.concatenate([true, y_data[i]], axis=0)
-
     return true
 
 def predict_train_val_eval(DataCenter, model):
     ''' Prediction for all training, validation and evaluation batches
-
     '''
 
     print('Predicting Training, Validation & Evaluation Batches')
