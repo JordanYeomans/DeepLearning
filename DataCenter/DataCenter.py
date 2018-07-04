@@ -38,6 +38,7 @@ class DataCenter():
         self.batch_size = 100
         self.epochs = 10
 
+        ## Folder Paths
         self.model_save_folder = 'saved_models/'
         self.model_save_name = 'latest_model'
         self.model_load_folder = 'saved_models/'
@@ -48,6 +49,13 @@ class DataCenter():
 
         self.x_placeholder = None
         self.y_placeholder = None
+
+        # Network Save Controls
+        self.save_network_increment = 0.01
+        self.recalc_eval = 1
+        self.eval_metric = 'best_val_accuracy'
+        self.max_save_mse = 0
+        self.early_stopping = self.epochs
 
         # Learning Rate Decay
         self.lr_start = 0.00001
@@ -67,6 +75,7 @@ class DataCenter():
         # Data
         self.all_data = None
         self.folder_path = './data/'
+        self.data_location = './'
         self.file_prefix = ''
 
         self.train_input_data = None
@@ -74,9 +83,32 @@ class DataCenter():
         self.eval_input_data = None
 
         self.one_hot_labels = None
+        self.one_hot_balance_rate = None
+        self.one_hot_balance_samples = 0
 
-        ## Graphing Parameters
+        # Predictions
+        self.predict_input_data = []
+        self.predict_output_data = []
+        self.truth_output_data = []
+
+        # Cost Functions
+        self.set_cost_function = 'mse'
+
+        # Graphing Parameters
         self.graph_type = 'Research'
+
+        ## Manipulating Data
+        # Continuous Value One Hot Array
+        self.one_hot_length = None
+        self.one_hot_val_min = None
+        self.one_hot_val_max = None
+
+        # Dynamic Updating MSE Loss
+        self.dyn_mse_base_width = 100
+        self.dyn_mse_top_width = 1
+        self.dyn_mse_power = 1
+        self.dyn_mse_offset = 0
+
 
     ## Data Management Functions
     def load_all_data_single(self,data_folder,data_file):
@@ -208,6 +240,15 @@ class DataCenter():
         np.savetxt(self.data_location + self.file_prefix + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
         np.savetxt(self.folder_path + self.file_prefix + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
 
+    def contin_one_hot_output(self):
+        self.all_output_data, self.one_hot_range = data.create_continuous_one_hot_array(self.all_output_data,
+                                                                                        self.one_hot_val_min,
+                                                                                        self.one_hot_val_max,
+                                                                                        self.one_hot_length)
+        # Save one_hot range
+        np.savetxt(self.data_location + self.file_prefix + 'one_hot_labels.csv', self.one_hot_range, delimiter=',')
+        np.savetxt(self.folder_path + self.file_prefix + 'one_hot_labels.csv', self.one_hot_range, delimiter=',')
+
     def scale_outputs(self):
         self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data)
 
@@ -313,6 +354,14 @@ class DataCenter():
         self.reset_val_batches()
         self.reset_eval_batches()
 
+    def balance_batch_for_one_hot(self):
+        print('Balancing Batches for One Hot Array')
+        if self.one_hot_balance_rate is None:
+            self.one_hot_balance_rate = 1
+
+        self.load_data()
+        self.train_input_data, self.train_output_data = data.balance_batch_for_one_hot(self.train_input_data, self.train_output_data, self.one_hot_balance_samples)
+
     def clear_memory(self):
         self.train_input_data = None
         self.train_output_data = None
@@ -405,3 +454,6 @@ class DataCenter():
     ## Manipulating Data
     def integrate_input_curve(self, col_start = None, col_end = None):
         self.all_output_data = data.integrate_input_curve(self.all_input_data, col_start=col_start, col_end=col_end)
+
+    def dynamic_updating_continuous_mse_loss(self):
+        self.all_output_data, self.dyn_mse_shift = data.continuous_mse_loss(self.all_output_data, self.dyn_mse_base_width, self.dyn_mse_power, self.dyn_mse_top_width, self.dyn_mse_offset)
