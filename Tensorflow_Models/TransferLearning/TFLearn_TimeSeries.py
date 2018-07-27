@@ -270,23 +270,23 @@ def Conv_Dense_0001_d(DataCenter, trainable=False):
     with tf.variable_scope(scope):
         x = DataCenter.x_placeholder
 
-        nn = tf.layers.conv1d(x, filters=16, kernel_size=15, name='conv1_1', padding='same', trainable=trainable, kernel_initializer= kern_init)
-        nn = tf.layers.conv1d(nn, filters=16, kernel_size=15, name='conv1_2', padding='same',  trainable=trainable, kernel_initializer= kern_init)
-        nn = tf.layers.conv1d(nn, filters=16, kernel_size=15, name='conv1_3', padding='same',  trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(x, filters=4, kernel_size=15, name='conv1_1', padding='same', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=4, kernel_size=15, name='conv1_2', padding='same',  trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=4, kernel_size=15, name='conv1_3', padding='same',  trainable=trainable, kernel_initializer= kern_init)
         nn = tf.layers.max_pooling1d(nn, pool_size=2, strides=2, name='max_pool1')
         nn = tf.layers.dropout(nn, 0.5)
         nn = tf.layers.batch_normalization(nn, name='batchnorm_1', trainable=trainable)
 
-        nn = tf.layers.conv1d(nn, filters=32, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv2_1', trainable=trainable, kernel_initializer= kern_init)
-        nn = tf.layers.conv1d(nn, filters=32, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv2_2', trainable=trainable, kernel_initializer= kern_init)
-        nn = tf.layers.conv1d(nn, filters=32, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv2_3', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=8, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv2_1', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=8, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv2_2', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=8, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv2_3', trainable=trainable, kernel_initializer= kern_init)
         nn = tf.layers.max_pooling1d(nn, pool_size=2, strides=2, name='max_pool2')
         nn = tf.layers.dropout(nn, 0.5)
         nn = tf.layers.batch_normalization(nn, name='batchnorm_2', trainable=trainable)
 
-        nn = tf.layers.conv1d(nn, filters=64, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv3_1', trainable=trainable, kernel_initializer= kern_init)
-        nn = tf.layers.conv1d(nn, filters=64, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv3_2', trainable=trainable, kernel_initializer= kern_init)
-        nn = tf.layers.conv1d(nn, filters=64, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv3_3', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=16, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv3_1', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=16, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv3_2', trainable=trainable, kernel_initializer= kern_init)
+        nn = tf.layers.conv1d(nn, filters=16, kernel_size=15, activation=tf.nn.relu, padding='same',  name='conv3_3', trainable=trainable, kernel_initializer= kern_init)
         nn = tf.layers.dropout(nn, 0.5)
         nn = tf.layers.batch_normalization(nn, name='batchnorm_3', trainable=trainable)
 

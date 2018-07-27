@@ -42,7 +42,7 @@ def extract_variables(DataCenter):
     return
 
 
-def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save=True, min_save_acc=0, noise=False, log_train_acc=False, balance_one_hot=True):
+def TransferLearning_train_categorical_network(DataCenter, model, transfer_layers, transfer_layer_types, save=True, min_save_acc=0, noise=False, log_train_acc=False, balance_one_hot=False, balance_dual_side_one_hot = False):
     ''' This function is replicated from Tensorflow_Base_Functions.train to adapt transfer learning
     '''
 
@@ -182,6 +182,10 @@ def TransferLearning_train_categorical_network(DataCenter, model, transfer_layer
             # Balance data for 1 hot array
             if balance_one_hot is True and epoch % DataCenter.one_hot_balance_rate == 0:
                 DataCenter.balance_batch_for_one_hot()
+                DataCenter.reset_train_batches()
+
+            if balance_dual_side_one_hot is True and epoch % DataCenter.one_hot_balance_rate == 0:
+                DataCenter.balance_batch_for_dual_sided_one_hot()
                 DataCenter.reset_train_batches()
 
             # Check for Early Stopping

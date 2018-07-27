@@ -38,6 +38,10 @@ class DataCenter():
         self.batch_size = 100
         self.epochs = 10
 
+        self.num_train_batches = 2
+        self.num_val_batches = 2
+        self.num_eval_batches = 2
+
         ## Folder Paths
         self.model_save_folder = 'saved_models/'
         self.model_save_name = 'latest_model'
@@ -233,7 +237,7 @@ class DataCenter():
     def reshape_1D_input(self):
         self.all_input_data = data.reshape_1D_input(self.all_input_data)
 
-    def one_hot_output(self, column, concat = True):
+    def one_hot_output(self, column, concat=False):
         self.all_output_data, self.one_hot_labels = data.one_hot_output(self.all_output_data, column, concat=concat)
 
         # Save one_hot_labels
@@ -248,6 +252,17 @@ class DataCenter():
         # Save one_hot range
         np.savetxt(self.data_location + self.file_prefix + 'one_hot_labels.csv', self.one_hot_range, delimiter=',')
         np.savetxt(self.folder_path + self.file_prefix + 'one_hot_labels.csv', self.one_hot_range, delimiter=',')
+
+    def balance_batch_for_dual_sided_one_hot(self):
+        print('Balancing Batches for Dual Sided One Hot Array')
+        if self.one_hot_balance_rate is None:
+            self.one_hot_balance_rate = 1
+
+        self.load_data()
+        self.train_input_data, self.train_output_data = data.balance_batch_for_dual_sided_one_hot(self.train_input_data, self.train_output_data)
+
+    def padd_one_hot_output(self, pad_reduce):
+        self.all_output_data = data.padd_one_hot_array(self.all_output_data, pad_reduce)
 
     def scale_outputs(self):
         self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data)
@@ -428,7 +443,7 @@ class DataCenter():
             np.savetxt(self.model_save_folder + log_prefix + 'Val_Acc_Log.csv', self.acc_val_log, delimiter=',', fmt='%1.4f')
 
     ## Data Augmentation:
-    def augment_1D_left_right(self, left = 6, right = 6, step = 1):
+    def augment_1D_left_right(self, left=6, right=6, step=1):
         print('Augmenting Data Left and Right. New Samples =')
         self.train_input_data, self.train_output_data  = data.augment_1D_left_right(self.train_input_data, self.train_output_data, left, right, step)
         self.print_num_samples()
@@ -438,7 +453,7 @@ class DataCenter():
         self.train_input_data, self.train_output_data = data.augment_1D_squeeze_stretch(self.train_input_data, self.train_output_data, squeeze, stretch, steps)
         self.print_num_samples()
 
-    def augment_1D_squash_pull(self, squash= 0.98, pull = 1.02, steps = 10, type = 'multiply'):
+    def augment_1D_squash_pull(self, squash=0.98, pull=1.02, steps=10, type='multiply'):
         print('Augmenting - Squash & Pull')
         self.train_input_data, self.train_output_data = data.augment_1D_squash_pull(self.train_input_data, self.train_output_data, squash, pull, steps, type)
         self.print_num_samples()
@@ -452,8 +467,21 @@ class DataCenter():
         self.train_input_data, self.train_output_data = data.shuffle_input_output(self.train_input_data,self.train_output_data)
 
     ## Manipulating Data
-    def integrate_input_curve(self, col_start = None, col_end = None):
+    def integrate_input_curve(self, col_start=None, col_end=None):
         self.all_output_data = data.integrate_input_curve(self.all_input_data, col_start=col_start, col_end=col_end)
 
     def dynamic_updating_continuous_mse_loss(self):
         self.all_output_data, self.dyn_mse_shift = data.continuous_mse_loss(self.all_output_data, self.dyn_mse_base_width, self.dyn_mse_power, self.dyn_mse_top_width, self.dyn_mse_offset)
+
+    ## Siamese Network
+    def calc_train_siamese_batches(self):
+        self.unique_ids = data.calc_unique_ids(self.all_output_data)
+        self.siamese_train_input_batches_left, self.siamese_train_input_batches_right, self.siamese_train_output_batches, self.siamese_train_left_idx, self.siamese_train_right_idx = data.calc_siamese_batches(self.train_input_data, self.train_output_data, self.unique_ids, self.num_train_batches, self.batch_size)
+
+    def calc_val_siamese_batches(self):
+        self.unique_ids = data.calc_unique_ids(self.all_output_data)
+        self.siamese_val_input_left, self.siamese_val_input_right, self.siamese_val_output, self.siamese_val_left_idx, self.siamese_val_right_idx = data.calc_siamese_batches(self.val_input_data, self.val_output_data, self.unique_ids, self.num_val_batches, self.batch_size, reshape=False)
+
+    def calc_eval_siamese_batches(self):
+        self.unique_ids = data.calc_unique_ids(self.all_output_data)
+        self.siamese_eval_input_left, self.siamese_eval_input_right, self.siamese_eval_output_batches, self.siamese_eval_left_idx, self.siamese_eval_right_idx = data.calc_siamese_batches(self.eval_input_data, self.eval_output_data, self.unique_ids, self.num_eval_batches, self.batch_size, reshape=False)

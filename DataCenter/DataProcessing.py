@@ -503,3 +503,113 @@ def continuous_mse_loss(all_output_data, base_width, power, top_width, offset = 
 
     shift = padding
     return new_output_data, shift
+
+
+def padd_one_hot_array(all_output_data, pad_reduce = 0):
+    one_hot_length = all_output_data.shape[1]
+    padding = (one_hot_length * 2) + 1
+
+    if pad_reduce != 0:
+        padding = padding - int((pad_reduce/2))
+
+    pad_zeros = np.zeros((all_output_data.shape[0], padding))
+
+    all_output_data = np.concatenate([pad_zeros, all_output_data, pad_zeros], axis=1)
+
+    if pad_reduce != 0 and pad_reduce % 2 != 0:
+        all_output_data = all_output_data[:,1:]
+
+    return all_output_data
+
+
+def balance_batch_for_dual_sided_one_hot(all_input_data, all_output_data):
+
+    c0_1 = np.where(all_output_data[:, 0] == 1)[0]
+    c0_0 = np.where(all_output_data[:, 0] == 0)[0]
+
+    c1_1 = np.where(all_output_data[:, 1] == 1)[0]
+    c1_0 = np.where(all_output_data[:, 1] == 0)[0]
+
+    Zero_Zero = np.intersect1d(c0_0, c1_0)
+    One_Zero = np.intersect1d(c0_1, c1_0)
+    Zero_One = np.intersect1d(c0_0, c1_1)
+
+    One_One_idx = np.intersect1d(c0_1, c1_1)
+
+    samples = [Zero_Zero.shape[0], One_Zero.shape[0], Zero_One.shape[0]]
+    min_samples = np.min(samples)
+
+    np.random.shuffle(Zero_Zero)
+    np.random.shuffle(One_Zero)
+    np.random.shuffle(Zero_One)
+
+    Zero_Zero_idx = Zero_Zero[:min_samples]
+    One_Zero_idx = One_Zero[:min_samples]
+    Zero_One_idx = Zero_One[:min_samples]
+
+    all_input_data = np.concatenate([all_input_data[Zero_Zero_idx], all_input_data[One_Zero_idx], all_input_data[Zero_One_idx], all_input_data[One_One_idx]], axis=0)
+    all_output_data = np.concatenate([all_output_data[Zero_Zero_idx], all_output_data[One_Zero_idx], all_output_data[Zero_One_idx], all_output_data[One_One_idx]], axis=0)
+
+    all_input_data, all_output_data = shuffle_input_output(all_input_data, all_output_data)
+
+    return all_input_data, all_output_data
+
+def calc_unique_ids(output_data):
+    return np.unique(output_data)
+
+def calc_siamese_batches(all_input_data, all_output_data, unique_ids, batches, batch_size, reshape=True):
+
+    def get_random_sample(input_data, unique_id_idx_list, unique_id_idx):
+        trace_idxs = unique_id_idx_list[unique_id_idx]
+        np.random.shuffle(trace_idxs)
+        return input_data[trace_idxs[0]]
+
+    # Get an array of labels. Either 0 or 1
+    total_samples = batches * batch_size
+
+    # Get ID Array
+    unique_id_idx_list = []
+    for i in range(len(unique_ids)):
+        id_array = np.array(np.where(all_output_data == unique_ids[i])[0])
+        unique_id_idx_list.append(id_array)
+
+    # Create Arrays
+    siamese_left_id_idx = np.random.random_integers(0, len(unique_ids)-1, total_samples)
+
+    siamese_right_id_idx = np.zeros_like(siamese_left_id_idx)
+    labels = np.zeros_like(siamese_left_id_idx)
+
+    input_data_batches_left = np.zeros((total_samples, all_input_data.shape[1], all_input_data.shape[2]))
+    input_data_batches_right = np.zeros((total_samples, all_input_data.shape[1], all_input_data.shape[2]))
+
+    # Iterate over all indexs
+    for i in range(len(siamese_right_id_idx)):
+
+        rand_choice = np.random.random()
+
+        # If left and right are the same
+        if rand_choice >= 0.5:
+            siamese_right_id_idx[i] = siamese_left_id_idx[i]
+            labels[i] = 1
+
+        # If not, set right to be a different index
+        else:
+            siamese_right_id_idx[i] = np.random.randint(0, len(unique_ids))
+            while siamese_right_id_idx[i] == siamese_left_id_idx[i]:
+                siamese_right_id_idx[i] = np.random.randint(0, len(unique_ids))
+
+            labels[i] = 0
+
+        input_data_batches_left[i] = get_random_sample(all_input_data, unique_id_idx_list, siamese_left_id_idx[i])
+        input_data_batches_right[i] = get_random_sample(all_input_data, unique_id_idx_list, siamese_right_id_idx[i])
+
+    # If True, Split into batches
+    if reshape is True:
+        # Reshape Inputs
+        input_data_batches_left = input_data_batches_left.reshape(batches, batch_size, all_input_data.shape[1], all_input_data.shape[2])
+        input_data_batches_right = input_data_batches_right.reshape(batches, batch_size, all_input_data.shape[1],all_input_data.shape[2])
+        labels = labels.reshape(batches, batch_size)
+        siamese_left_id_idx = siamese_left_id_idx.reshape(batches, batch_size)
+        siamese_right_id_idx = siamese_right_id_idx.reshape(batches, batch_size)
+
+    return input_data_batches_left, input_data_batches_right, labels, siamese_left_id_idx, siamese_right_id_idx

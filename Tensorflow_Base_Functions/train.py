@@ -77,3 +77,58 @@ def train_categorical_network(DataCenter, model, save = True, load_model = False
                 saver.save(sess, DataCenter.model_save_folder + DataCenter.model_save_name)
 
     return
+
+
+def train_siamese_network(DataCenter, model_left, model_right, save = True, load_model = False, min_save_acc = 0):
+
+    optimizer, cost, loss_eq, d, dw = tfCost.siamese_loss(DataCenter, model_left, model_right)
+
+    #learning_step, optimizer = tfOptimizers.adam_optimizer_w_lr_decay(DataCenter, cost)
+    saver = tf.train.Saver()
+
+    prog_bar = new_prog_bar()
+
+    DataCenter.initialize_all_logs()
+
+    DataCenter.calc_val_siamese_batches()
+
+    x_left = DataCenter.x_left_placeholder
+    x_right = DataCenter.x_right_placeholder
+    y = DataCenter.y_placeholder
+
+    #predict = tf.to_int32(tf.abs(tf.subtract(model_left, model_right)) > 0.5)
+    predict = tf.subtract(model_left, model_right)
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+
+        for epoch in range(DataCenter.epochs):
+            DataCenter.calc_train_siamese_batches()
+            batch_loss = np.zeros(DataCenter.num_train_batches)
+
+            for siamese_batch in range(DataCenter.num_train_batches):
+                left_input = DataCenter.siamese_train_input_batches_left[siamese_batch]
+
+                right_input = DataCenter.siamese_train_input_batches_right[siamese_batch]
+                labels = DataCenter.siamese_train_output_batches[siamese_batch]
+
+                _, c = sess.run([optimizer, cost], feed_dict={x_left: left_input, x_right: right_input, y: labels})
+                batch_loss[siamese_batch] = c
+            print(np.sum(labels))
+
+            # print(labels[0])
+            # plt.figure()
+            # plt.plot(left_input[0])
+            # plt.plot(right_input[0])
+            # plt.show()
+
+            print('\n Epoch', epoch, 'completed out of', DataCenter.epochs, 'loss:', np.mean(batch_loss))
+
+            #
+            # if epoch%10 == 0:
+            #     predictions = predict.eval(feed_dict={x_left: DataCenter.siamese_val_input_left, x_right: DataCenter.siamese_val_input_right})
+            #     val_output = DataCenter.siamese_val_output
+            #     plot_samples = 1000
+            #     plt.figure()
+            #     plt.scatter(val_output[:plot_samples], predictions[:plot_samples], s=1)
+            #     plt.show()
