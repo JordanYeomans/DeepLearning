@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import DeepLearning.DataCenter.DataProcessing as DataProcess
 
 def prediction_accuracy(DataCenter, model, x_data, y_data):
     ''' Calculate prediction accuracy between x_data and y_data from a NN model
@@ -80,3 +81,9 @@ def predict_train_val_eval(DataCenter, model):
 
     DataCenter.eval_true = true_outputs(eval_y_all)
     DataCenter.eval_predictions = predict(DataCenter, model, eval_x_all)
+
+def export_val_one_hot_predictions(DataCenter, model):
+    val_predictions = predict(DataCenter, model, DataCenter.val_input_batches)
+    val_true = DataProcess.combine_batches(DataCenter.val_output_batches)
+    val_true_arg_max = np.argmax(val_true, axis=1)
+    return np.concatenate([val_true_arg_max, val_predictions], axis=1)

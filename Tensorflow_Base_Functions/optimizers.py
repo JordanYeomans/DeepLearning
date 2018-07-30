@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-def adam_optimizer(DataCenter, cost):
-    return tf.train.AdamOptimizer(DataCenter.learning_rate).minimize(cost)
+def adam_optimizer(lr):
+    return tf.train.AdamOptimizer(lr)
 
 def adam_optimizer_w_lr_decay(DataCenter, cost):
 

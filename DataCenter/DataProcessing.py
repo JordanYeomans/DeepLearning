@@ -554,8 +554,10 @@ def balance_batch_for_dual_sided_one_hot(all_input_data, all_output_data):
 
     return all_input_data, all_output_data
 
+
 def calc_unique_ids(output_data):
     return np.unique(output_data)
+
 
 def calc_siamese_batches(all_input_data, all_output_data, unique_ids, batches, batch_size, reshape=True):
 
@@ -613,3 +615,9 @@ def calc_siamese_batches(all_input_data, all_output_data, unique_ids, batches, b
         siamese_right_id_idx = siamese_right_id_idx.reshape(batches, batch_size)
 
     return input_data_batches_left, input_data_batches_right, labels, siamese_left_id_idx, siamese_right_id_idx
+
+def combine_batches(batch_data):
+    combined_data = batch_data[0]
+    for i in range(1, batch_data.shape[0]):
+        combined_data = np.concatenate([combined_data, batch_data[i]], axis=0)
+    return combined_data
