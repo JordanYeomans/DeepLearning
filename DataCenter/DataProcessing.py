@@ -167,7 +167,7 @@ def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
         for i in range(num_batches):
             new_input_data[i] = np.array([input_data[batch_size * i : batch_size * (i+1)]])
             new_output_data[i] = np.array([output_data[batch_size * i : batch_size * (i+1)]])
-            print('Splitting into batches {}%'.format(np.round(i/num_batches*100), 2))
+            # print('Splitting into batches {}%'.format(np.round(i/num_batches*100), 2))
     return new_input_data, new_output_data
 
 
