@@ -34,6 +34,7 @@ class TrainingCenter():
         # Internal Parameters
         self._batch_num = 0
         self.val_acc = 0
+        self.best_val_acc = 0
         self.epoch = 0
 
         # Tensorboard Parameters
@@ -163,8 +164,9 @@ class TrainingCenter():
 
     def calc_best_model(self):
         self.best_model = False
-        #Todo: Calc Best Model
-        self.best_model = True
+        if self.val_acc > self.best_val_acc:
+            self.best_model = True
+            self.best_val_acc = self.val_acc
 
     def initialize_loss(self, DataCenter, model):
         if self.loss == 'categorical_cross_entropy':
