@@ -84,7 +84,7 @@ class TrainingCenter():
                                                  self.tb_epoch_train_acc,
                                                  self.tb_epoch_val_acc])
 
-        self.tb_epoch_train_writer = tf.summary.FileWriter('./epoch_tb/')
+        self.tb_epoch_train_writer = tf.summary.FileWriter(self.model_save_folder + 'epoch_tb_')
 
     def create_time_tensorboard(self):
         self.tb_time_train_loss = tf.summary.scalar('Training Loss', self.tb_time_train_loss_var)
@@ -93,7 +93,7 @@ class TrainingCenter():
         self.tb_time_merged = tf.summary.merge([self.tb_time_train_loss,
                                                  self.tb_time_val_acc])
 
-        self.tb_time_train_writer = tf.summary.FileWriter('./time_tb/')
+        self.tb_time_train_writer = tf.summary.FileWriter(self.model_save_folder + 'time_tb_')
 
 
     def update_epoch_tensorboard(self):
