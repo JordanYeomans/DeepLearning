@@ -86,4 +86,4 @@ def export_val_one_hot_predictions(DataCenter, model):
     val_predictions = predict(DataCenter, model, DataCenter.val_input_batches)
     val_true = DataProcess.combine_batches(DataCenter.val_output_batches)
     val_true_arg_max = np.argmax(val_true, axis=1)
-    return np.concatenate([val_true_arg_max, val_predictions], axis=1)
+    return np.concatenate([val_true_arg_max.reshape(-1,1), val_predictions], axis=1)
