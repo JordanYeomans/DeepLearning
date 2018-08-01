@@ -3,7 +3,6 @@ import numpy as np
 
 from DeepLearning.Misc.ProgBar import new_prog_bar, update_prog_bar
 
-import DeepLearning.DataCenter.DataProcessing as DataProcess
 import DeepLearning.Tensorflow_Base_Functions.evaluation as tfEval
 import DeepLearning.Tensorflow_Base_Functions.loss as tfLoss
 import DeepLearning.Tensorflow_Base_Functions.optimizers as tfOptimizers
