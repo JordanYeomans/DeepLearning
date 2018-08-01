@@ -243,6 +243,7 @@ class DataCenter():
         # Save one_hot_labels
         np.savetxt(self.data_location + self.file_prefix + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
         np.savetxt(self.folder_path + self.file_prefix + 'one_hot_labels.csv', self.one_hot_labels, delimiter=',')
+        print(self.folder_path + self.file_prefix + 'one_hot_labels.csv')
 
     def contin_one_hot_output(self):
         self.all_output_data, self.one_hot_range = data.create_continuous_one_hot_array(self.all_output_data,

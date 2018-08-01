@@ -29,6 +29,8 @@ class TrainingCenter():
         self.switch_load_model = False
 
         self.val_metrics = ['predict_val_acc']
+        self.update_val_metrics_on_batch_update = False
+        self.update_val_metrics_on_n_batches = False
 
         self.loss = 'categorical_cross_entropy'
         self.optimizer = 'adam'
@@ -228,8 +230,12 @@ class TrainingCenter():
                     self.set_train_batch(DataCenter)                    # Set training batch data
                     self.train_step()                                   # Run 1 step
                     self.update_consol()                                # Update Progress Bar
-                    self.update_time_tensorboard(DataCenter, model)     #Update time based tensorboard if needed
+                    self.update_time_tensorboard(DataCenter, model)     # Update time based tensorboard if needed
 
+                    if self.update_val_metrics_on_n_batches is not False:
+                        if self._batch_num != 0 and self.update_val_metrics_on_n_batches%self._batch_num == 0:
+                            self.update_val_metrics(DataCenter, model)
+                            self.update_epoch_tensorboard()
 
                 # Validation Metrics
                 self.update_val_metrics(DataCenter, model)
