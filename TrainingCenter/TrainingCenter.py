@@ -21,6 +21,9 @@ class TrainingCenter():
         self.model_save_folder = './saved_model/'
         self.model_save_name = 'model'
 
+        self.model_load_folder = './saved_model'
+        self.model_load_name = 'model'
+
         self.prog_bar = new_prog_bar()
 
         self.switch_load_model = False
@@ -140,10 +143,8 @@ class TrainingCenter():
 
     def load_model(self, load):
         if load is True:
-            print('Loading Model 1')
-            new_saver = tf.train.import_meta_graph(self.model_save_folder + self.model_save_name + '.meta')
-            print('Loading Model 2')
-            new_saver.restore(self.sess, tf.train.latest_checkpoint(self.model_save_folder))
+            new_saver = tf.train.import_meta_graph(self.model_load_folder + self.model_load_name + '.meta')
+            new_saver.restore(self.sess, tf.train.latest_checkpoint(self.model_load_folder))
 
     def save_sess(self):
         print('Saving Model')
