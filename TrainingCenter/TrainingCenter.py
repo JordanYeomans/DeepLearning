@@ -233,7 +233,7 @@ class TrainingCenter():
                     self.update_time_tensorboard(DataCenter, model)     # Update time based tensorboard if needed
 
                     if self.update_val_metrics_on_n_batches is not False:
-                        if self._batch_num != 0 and self.update_val_metrics_on_n_batches%self._batch_num == 0:
+                        if self._batch_num != 0 and self._batch_num%self.update_val_metrics_on_n_batches == 0:
                             self.update_val_metrics(DataCenter, model)
                             self.update_epoch_tensorboard()
 
