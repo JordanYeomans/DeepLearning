@@ -323,8 +323,6 @@ class DataCenter():
             self.val_input_batches = self.val_input_data
             self.val_output_batches = self.val_output_data
 
-            self.val_input_batches, self.val_output_batches = data.shuffle_input_output(self.val_input_batches,self.val_output_batches)
-
             self.val_input_batches = self.val_input_batches[:self.batch_size * self.val_batches]
             self.val_output_batches = self.val_output_batches[:self.batch_size * self.val_batches]
 
@@ -347,8 +345,6 @@ class DataCenter():
         if self.eval_batches > 0:
             self.eval_input_batches = self.eval_input_data
             self.eval_output_batches = self.eval_output_data
-
-            self.eval_input_batches, self.eval_output_batches = data.shuffle_input_output(self.eval_input_batches,self.eval_output_batches)
 
             self.eval_input_batches = self.eval_input_batches[:self.batch_size * self.eval_batches]
             self.eval_output_batches = self.eval_output_batches[:self.batch_size * self.eval_batches]
