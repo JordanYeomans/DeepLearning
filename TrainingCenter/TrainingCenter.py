@@ -38,6 +38,7 @@ class TrainingCenter():
         # Internal Parameters
         self._batch_num = 0
         self.val_acc = 0
+        self.eval_acc = 0
         self.train_acc = 0
         self.best_val_acc = 0
         self.epoch = 0
@@ -46,9 +47,11 @@ class TrainingCenter():
         self.tb_epoch_train_loss_var = tf.Variable(0, dtype=tf.float32)
         self.tb_epoch_train_acc_var = tf.Variable(0,dtype=tf.float32)
         self.tb_epoch_val_acc_var = tf.Variable(0, dtype=tf.float32)
+        self.tb_epoch_eval_acc_var = tf.Variable(0, dtype=tf.float32)
 
         self.tb_time_train_loss_var = tf.Variable(0, dtype=tf.float32)
         self.tb_time_val_acc_var = tf.Variable(0, dtype=tf.float32)
+        self.tb_time_eval_acc_var = tf.Variable(0, dtype=tf.float32)
 
         self.start_time = time.time()
         self.last_time = time.time()
@@ -70,6 +73,12 @@ class TrainingCenter():
             print('Validation Acc = {}'.format(self.val_acc))
             # ToDo: Add to Tensorboard
 
+        if 'predict_eval_acc' in self.val_metrics:
+            self.eval_acc = tfEval.prediction_accuracy(DataCenter, model,
+                                                      DataCenter.eval_input_batches,
+                                                      DataCenter.eval_output_batches)
+            print('Evaluation Acc = {}'.format(self.eval_acc))
+
         if 'predict_train_acc' in self.val_metrics:
             self.train_acc = tfEval.prediction_accuracy(DataCenter, model,
                                                       DataCenter.train_input_batches,
@@ -82,19 +91,22 @@ class TrainingCenter():
 
 
     def create_epoch_tensorboard(self):
-        self.tb_epoch_train_loss = tf.summary.scalar('Training Loss', self.tb_epoch_train_loss_var)
-        self.tb_epoch_train_acc = tf.summary.scalar('Training Acc', self.tb_epoch_train_acc_var)
-        self.tb_epoch_val_acc = tf.summary.scalar('Validation Accuracy', self.tb_epoch_val_acc_var)
+        self.tb_epoch_train_loss = tf.summary.scalar('Epoch - Training Loss', self.tb_epoch_train_loss_var)
+        self.tb_epoch_train_acc = tf.summary.scalar('Epoch - Training Acc', self.tb_epoch_train_acc_var)
+        self.tb_epoch_val_acc = tf.summary.scalar('Epoch - Validation Accuracy', self.tb_epoch_val_acc_var)
+        self.tb_epoch_eval_acc = tf.summary.scalar('Epoch - Evaluation Accuracy', self.tb_epoch_eval_acc_var)
 
         self.tb_epoch_merged = tf.summary.merge([self.tb_epoch_train_loss,
                                                  self.tb_epoch_train_acc,
-                                                 self.tb_epoch_val_acc])
+                                                 self.tb_epoch_val_acc,
+                                                 self.tb_epoch_eval_acc])
 
         self.tb_epoch_train_writer = tf.summary.FileWriter(self.model_save_folder + 'epoch_tb')
 
     def create_time_tensorboard(self):
-        self.tb_time_train_loss = tf.summary.scalar('Training Loss', self.tb_time_train_loss_var)
-        self.tb_time_val_acc = tf.summary.scalar('Validation Accuracy', self.tb_time_val_acc_var)
+        self.tb_time_train_loss = tf.summary.scalar('Time - Training Loss', self.tb_time_train_loss_var)
+        self.tb_time_val_acc = tf.summary.scalar('Time - Validation Accuracy', self.tb_time_val_acc_var)
+        self.tb_time_eval_acc = tf.summary.scalar('Time - Evaluation Accuracy', self.tb_time_eval_acc_var)
 
         self.tb_time_merged = tf.summary.merge([self.tb_time_train_loss,
                                                  self.tb_time_val_acc])
@@ -106,6 +118,7 @@ class TrainingCenter():
         # Assign Variables
         self.sess.run([self.tb_epoch_train_acc_var.assign(self.train_acc),
                        self.tb_epoch_val_acc_var.assign(self.val_acc),
+                       self.tb_epoch_eval_acc_var.assign(self.eval_acc),
                        self.tb_epoch_train_loss_var.assign(self.epoch_loss_latest)])
 
         summary = self.sess.run(self.tb_epoch_merged)
@@ -122,6 +135,7 @@ class TrainingCenter():
 
             # Assign Variables
             self.sess.run([self.tb_time_val_acc_var.assign(self.time_val_acc),
+                           self.tb_time_eval_acc_var.assign(self.time_eval_acc),
                            self.tb_time_train_loss_var.assign(self.time_train_loss)])
 
             summary = self.sess.run(self.tb_time_merged)
@@ -131,12 +145,18 @@ class TrainingCenter():
 
     def update_time_tensorboard_vars(self, DataCenter, model):
 
-        rand_choice = np.random.randint(0,DataCenter.val_input_batches.shape[0],size=5)
-
+        # Update Validation Parameters
+        rand_choice = np.random.randint(0,DataCenter.val_input_batches.shape[0], size=5)
         x_data = DataCenter.val_input_batches[rand_choice]
         y_data = DataCenter.val_output_batches[rand_choice]
-
         self.time_val_acc = tfEval.prediction_accuracy(DataCenter, model, x_data, y_data)
+
+        # Update Evaluation Parameters
+        rand_choice = np.random.randint(0, DataCenter.eval_input_batches.shape[0], size=5)
+        x_data = DataCenter.eval_input_batches[rand_choice]
+        y_data = DataCenter.eval_output_batches[rand_choice]
+        self.time_eval_acc = tfEval.prediction_accuracy(DataCenter, model, x_data, y_data)
+
         self.time_train_loss = np.mean(self.epoch_loss[:self._batch_num])
 
     def prog_bar_update(self):
