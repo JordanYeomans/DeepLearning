@@ -53,7 +53,7 @@ def scale_multi_chan_input(data, scale = None):
     return data, scale_sheet
 
 
-def one_hot_output(data, column, concat=True):
+def one_hot_output(data, column, concat=False):
     '''This function converts an output column to a 1 hot array
 
     :param data: Output Data
