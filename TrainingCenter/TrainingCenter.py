@@ -31,6 +31,7 @@ class TrainingCenter():
         self.val_metrics = ['predict_val_acc']
         self.update_val_metrics_on_batch_update = False
         self.update_val_metrics_on_n_batches = False
+        self.predict_train_acc_num_batches = 4
 
         self.loss = 'categorical_cross_entropy'
         self.optimizer = 'adam'
@@ -81,8 +82,8 @@ class TrainingCenter():
 
         if 'predict_train_acc' in self.val_metrics:
             self.train_acc = tfEval.prediction_accuracy(DataCenter, model,
-                                                      DataCenter.train_input_batches,
-                                                      DataCenter.train_output_batches)
+                                                      DataCenter.train_input_batches[:self.predict_train_acc_num_batches],
+                                                      DataCenter.train_output_batches[:self.predict_train_acc_num_batches])
             print('Training Acc = {}'.format(self.train_acc))
 
         if 'export_val_predictions' in self.val_metrics:
