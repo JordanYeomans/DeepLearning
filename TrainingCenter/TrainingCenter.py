@@ -158,7 +158,9 @@ class TrainingCenter():
         y_data = DataCenter.eval_output_batches[rand_choice]
         self.time_eval_acc = tfEval.prediction_accuracy(DataCenter, model, x_data, y_data)
 
-        self.time_train_loss = np.mean(self.epoch_loss[:self._batch_num])
+        # Update Training Parameters
+        if self._batch_num != 0: # Skip if _batch_num = 0. Loss will hold same value as last time
+            self.time_train_loss = np.mean(self.epoch_loss[:self._batch_num])
 
     def prog_bar_update(self):
         update = self._batch_num/self.num_train_batches
@@ -239,7 +241,7 @@ class TrainingCenter():
 
         with tf.Session() as self.sess:
             self.sess.run(tf.global_variables_initializer())
-            #self.initialize_sess()                                     # Initialise Session
+
             self.load_model(load)                                       # Check if we need to load model. If so, load
             self.create_epoch_tensorboard()                             # Create Tensorboard Parameters
             self.create_time_tensorboard()                              # Create Time Based Tensorboard
