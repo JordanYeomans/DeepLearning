@@ -54,6 +54,8 @@ class TrainingCenter():
         self.tb_time_val_acc_var = tf.Variable(0, dtype=tf.float32)
         self.tb_time_eval_acc_var = tf.Variable(0, dtype=tf.float32)
 
+        self.tb_suffix = ''
+
         self.start_time = time.time()
         self.last_time = time.time()
         self.time_count = 0
@@ -72,7 +74,6 @@ class TrainingCenter():
                                                       DataCenter.val_input_batches,
                                                       DataCenter.val_output_batches)
             print('Validation Acc = {}'.format(self.val_acc))
-            # ToDo: Add to Tensorboard
 
         if 'predict_eval_acc' in self.val_metrics:
             self.eval_acc = tfEval.prediction_accuracy(DataCenter, model,
@@ -102,7 +103,7 @@ class TrainingCenter():
                                                  self.tb_epoch_val_acc,
                                                  self.tb_epoch_eval_acc])
 
-        self.tb_epoch_train_writer = tf.summary.FileWriter(self.model_save_folder + 'epoch_tb')
+        self.tb_epoch_train_writer = tf.summary.FileWriter(self.model_save_folder + 'epoch_tb' + self.tb_suffix)
 
     def create_time_tensorboard(self):
         self.tb_time_train_loss = tf.summary.scalar('Time - Training Loss', self.tb_time_train_loss_var)
@@ -112,7 +113,7 @@ class TrainingCenter():
         self.tb_time_merged = tf.summary.merge([self.tb_time_train_loss,
                                                  self.tb_time_val_acc])
 
-        self.tb_time_train_writer = tf.summary.FileWriter(self.model_save_folder + 'time_tb')
+        self.tb_time_train_writer = tf.summary.FileWriter(self.model_save_folder + 'time_tb' + self.tb_suffix)
 
 
     def update_epoch_tensorboard(self):
