@@ -43,6 +43,8 @@ class TrainingCenter():
         self.train_acc = 0
         self.best_val_acc = 0
         self.epoch = 0
+        self.save_on_best = False
+        self.save_on_best_metric='val_acc'
 
         # Tensorboard Parameters
         self.tb_epoch_train_loss_var = tf.Variable(0, dtype=tf.float32)
@@ -176,24 +178,29 @@ class TrainingCenter():
         print('Saving Model')
         self.saver.save(self.sess, self.model_save_folder + self.model_save_name)
 
-    def save_model(self, save=True, save_on_best=True, save_on_best_metric='acc'):
-        self.calc_best_model()
+    def save_model(self, save=True, save_on_best=True):
 
-        if save is True:
-            if save_on_best is True:
-                if save_on_best_metric is True:
-                    if self.best_model is True:
-                        self.save_sess()
-                elif save_on_best_metric is False:
+        if save is True and self.save_on_best is False:
+            self.save_sess()
+
+        elif save is True and self.save_on_best is True:
+            self.calc_best_model()
+            if self.best_model is True:
                     self.save_sess()
-            elif save_on_best is False:
-                self.save_sess()
 
     def calc_best_model(self):
-        self.best_model = False
-        if self.val_acc > self.best_val_acc:
-            self.best_model = True
-            self.best_val_acc = self.val_acc
+        self.best_model = False                             # Set best model to false
+
+        # If save Metric is Validation Accuracy
+        if self.save_on_best_metric == 'val_acc':
+            if self.val_acc > self.best_val_acc:
+                self.best_val_acc = self.val_acc            # Record best val acc
+                self.best_model = True                      # Set best model to true
+
+        # Add save metrics here:
+        #
+        #
+        #
 
     def initialize_loss(self, DataCenter, model):
         if self.loss == 'categorical_cross_entropy':
@@ -234,7 +241,7 @@ class TrainingCenter():
         self.prog_bar_update()
         print('\n' + str(self.step_c))
 
-    def train_model(self, DataCenter, model, save=True, load=False, save_on_best=True, save_on_best_metric='acc'):
+    def train_model(self, DataCenter, model, save=True, load=False):
 
         self.set_placeholders(DataCenter)                           # Create Placeholders
         self.set_learning_step(DataCenter, model)                   # Create Cost, Optimiser and learning step
@@ -242,10 +249,10 @@ class TrainingCenter():
 
         with tf.Session() as self.sess:
             self.sess.run(tf.global_variables_initializer())
-
             self.load_model(load)                                       # Check if we need to load model. If so, load
             self.create_epoch_tensorboard()                             # Create Tensorboard Parameters
             self.create_time_tensorboard()                              # Create Time Based Tensorboard
+
             for self.epoch in range(DataCenter.epochs):                 # Iterate over all epochs
                 DataCenter.reset_train_batches()                        # Reset DataCenter Training Batches
                 self.reset_epoch_loss()                                 # Reset Epoch Loss
@@ -261,7 +268,7 @@ class TrainingCenter():
                             self.update_val_metrics(DataCenter, model)
                             self.update_epoch_tensorboard()
 
-                # Validation Metrics
-                self.update_val_metrics(DataCenter, model)
-                self.update_epoch_tensorboard()
-                self.save_model(save, save_on_best, save_on_best_metric)
+                # End of Iteration functions
+                self.update_val_metrics(DataCenter, model)              # Update Validation Metrics
+                self.update_epoch_tensorboard()                         # Update Epoch Tensorboard
+                self.save_model(save)                                   # Check if we need to Save model. If so, Save
