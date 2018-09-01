@@ -4,6 +4,7 @@ import time
 import matplotlib.pyplot as plt
 import scipy.signal
 import skimage.transform
+import sklearn.preprocessing
 
 def load_data(filepath):
     return np.array(pd.read_csv(filepath, header=None))
@@ -83,20 +84,23 @@ def one_hot_output(data, column, concat=False):
     return output_data, one_hot_labels
 
 
-def scale_outputs(data):
+def scale_outputs(data, type='max'):
 
     scale_record = np.zeros((data.shape[1]))
-    for i in range(data.shape[1]):
+    if type == 'max':
+        for i in range(data.shape[1]):
+            scale_min = np.abs(np.min(data[:, i]))
+            scale_max = np.abs(np.max(data[:, i]))
+            scale = np.max([scale_min, scale_max])
+            scale_record[i] = scale
+            data[:, i] = np.divide(data[:, i], scale)
 
-        scale_min = np.abs(np.min(data[:, i]))
-        scale_max = np.abs(np.max(data[:, i]))
-        scale = np.max([scale_min, scale_max])
+        data = np.nan_to_num(data)
 
-        scale_record[i] = scale
-
-        data[:, i] = np.divide(data[:, i], scale)
-
-    data = np.nan_to_num(data)
+    elif type == 'min_max':
+        print('Scaling outputs to be between 0 and 1. Total Columns = {}'.format(data.shape[1]))
+        for i in range(data.shape[1]):
+            data[:, i] = sklearn.preprocessing.minmax_scale(data[:, i])
 
     return data, scale_record
 

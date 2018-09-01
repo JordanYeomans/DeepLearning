@@ -265,8 +265,8 @@ class DataCenter():
     def padd_one_hot_output(self, pad_reduce):
         self.all_output_data = data.padd_one_hot_array(self.all_output_data, pad_reduce)
 
-    def scale_outputs(self):
-        self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data)
+    def scale_outputs(self, scale_type='max'):
+        self.all_output_data, self.output_scale = data.scale_outputs(self.all_output_data, scale_type)
 
     ## Neural Network Functions
     def reset_train_batches(self, batch_size = None, num_batches = None):
