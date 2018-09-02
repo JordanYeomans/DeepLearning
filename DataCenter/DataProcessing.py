@@ -624,6 +624,9 @@ def calc_siamese_batches(all_input_data, all_output_data, unique_ids, batches, b
 
 def combine_batches(batch_data):
     combined_data = batch_data[0]
+
     for i in range(1, batch_data.shape[0]):
+        print('Line 629: Batch Data = {}'.format(batch_data))
+
         combined_data = np.concatenate([combined_data, batch_data[i]], axis=0)
     return combined_data

@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import DeepLearning.DataCenter.DataProcessing as DataProcess
 
+
 def prediction_accuracy(DataCenter, model, x_data, y_data):
     ''' Calculate prediction accuracy between x_data and y_data from a NN model
 
@@ -24,6 +25,7 @@ def prediction_accuracy(DataCenter, model, x_data, y_data):
 
     return acc
 
+
 def mse(DataCenter, cost):
     ''' Evaluate Mean Squared Error
     '''
@@ -38,6 +40,7 @@ def mse(DataCenter, cost):
     mse = np.mean(mse, axis=0)
     return mse
 
+
 def predict(DataCenter, model, x_data):
     ''' Prediction for x_data through NN model
     '''
@@ -51,6 +54,7 @@ def predict(DataCenter, model, x_data):
 
     return predictions
 
+
 def true_outputs(y_data):
     ''' For Tensorflow based mini-batches, this function concatenates different batches into a single axis
     '''
@@ -58,6 +62,7 @@ def true_outputs(y_data):
     for i in range(1, y_data.shape[0]):
         true = np.concatenate([true, y_data[i]], axis=0)
     return true
+
 
 def predict_train_val_eval(DataCenter, model):
     ''' Prediction for all training, validation and evaluation batches
@@ -82,8 +87,15 @@ def predict_train_val_eval(DataCenter, model):
     DataCenter.eval_true = true_outputs(eval_y_all)
     DataCenter.eval_predictions = predict(DataCenter, model, eval_x_all)
 
+
 def export_val_one_hot_predictions(DataCenter, model):
     val_predictions = predict(DataCenter, model, DataCenter.val_input_batches)
     val_true = DataProcess.combine_batches(DataCenter.val_output_batches)
     val_true_arg_max = np.argmax(val_true, axis=1)
     return np.concatenate([val_true_arg_max.reshape(-1,1), val_predictions], axis=1)
+
+def export_val_mse_predictions(DataCenter, model):
+    print('Line 98: Exporting Val Predictions')
+    val_predictions = predict(DataCenter, model, DataCenter.val_input_batches)
+    val_true = DataProcess.combine_batches(DataCenter.val_output_batches)
+    return val_predictions, val_true

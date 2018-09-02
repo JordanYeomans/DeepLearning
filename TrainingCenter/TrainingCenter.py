@@ -90,10 +90,14 @@ class TrainingCenter():
                                                       DataCenter.train_output_batches[:self.predict_train_acc_num_batches])
             print('Training Acc = {}'.format(self.train_acc))
 
-        if 'export_val_predictions' in self.val_metrics:
+        if 'export_val_predictions' in self.val_metrics or 'export_onehot_val_predictions' in self.val_metrics:
             val_predictions = tfEval.export_val_one_hot_predictions(DataCenter, model)
-            np.savetxt(self.model_save_folder + self.model_save_name + 'val_predictions.csv', val_predictions, delimiter=',')
+            np.savetxt(self.model_save_folder + self.model_save_name + 'val_onehot_predictions.csv', val_predictions, delimiter=',')
 
+        if 'export_mse_val_predictions' in self.val_metrics:
+            val_predictions, val_true = tfEval.export_val_mse_predictions(DataCenter, model)
+            np.savetxt(self.model_save_folder + self.model_save_name + 'val_mse_predictions.csv', val_predictions,delimiter=',')
+            np.savetxt(self.model_save_folder + self.model_save_name + 'val_mse_true.csv', val_true, delimiter=',')
 
     def create_epoch_tensorboard(self):
         self.tb_epoch_train_loss = tf.summary.scalar('Epoch - Training Loss', self.tb_epoch_train_loss_var)
