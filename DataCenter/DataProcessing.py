@@ -139,7 +139,6 @@ def cut_input_data_seq_length(input_data, out_length = None):
 def reshape_1D_input(input_data):
     return input_data.reshape(input_data.shape[0], input_data.shape[1], 1)
 
-
 def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
     ''' Convert an array from [Samples, data size] - [Batches, Batch_size, Data size]
     '''
@@ -154,11 +153,14 @@ def convert_to_tensorflow_minbatch(input_data, output_data, batch_size):
     # Input and Output data dimensions will change depending on data type. An image output for say image segmentation
     # will have a different output dimension to categories.
 
+    print(new_input_data.ndim)
     # Create Input Batch Array
     if new_input_data.ndim == 4:
         new_input_data = np.zeros((num_batches, new_input_data.shape[1], new_input_data.shape[2], new_input_data.shape[3]))
+    elif new_input_data.ndim == 5:
+        new_input_data = np.zeros((num_batches, new_input_data.shape[1], new_input_data.shape[2], new_input_data.shape[3], new_input_data.shape[4]))
     else:
-        raise 'Need to add functionality for Not 2 Input dimensions'
+        raise 'Need to add functionality for Not 2 or 3 Input dimensions'
 
     # Create Output Batch Array
     print(new_output_data.shape)
