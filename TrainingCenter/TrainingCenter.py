@@ -13,7 +13,6 @@ class TrainingCenter():
 
     def __init__(self):
 
-        self.loss_type = 'categorical_cross_entropy'
 
         self.sess = tf.Session()
         self.saver = tf.train.Saver()
@@ -48,13 +47,15 @@ class TrainingCenter():
 
         # Tensorboard Parameters
         self.tb_epoch_train_loss_var = tf.Variable(0, dtype=tf.float32)
-        self.tb_epoch_train_acc_var = tf.Variable(0,dtype=tf.float32)
+        self.tb_epoch_train_acc_var = tf.Variable(0, dtype=tf.float32)
         self.tb_epoch_val_acc_var = tf.Variable(0, dtype=tf.float32)
         self.tb_epoch_eval_acc_var = tf.Variable(0, dtype=tf.float32)
 
         self.tb_time_train_loss_var = tf.Variable(0, dtype=tf.float32)
         self.tb_time_val_acc_var = tf.Variable(0, dtype=tf.float32)
         self.tb_time_eval_acc_var = tf.Variable(0, dtype=tf.float32)
+
+        self.time_train_loss = 10 # Initialise in case first time assign is at batch_num == 0
 
         self.tb_suffix = ''
 
@@ -198,14 +199,15 @@ class TrainingCenter():
                 self.best_model = True                      # Set best model to true
 
         # Add save metrics here:
-        #
-        #
-        #
+
 
     def initialize_loss(self, DataCenter, model):
         if self.loss == 'categorical_cross_entropy':
             print('Setting the Loss to: Categorical Cross Entropy')
             self._loss = tfLoss.categorical_cross_entropy(DataCenter, model)
+        if self.loss == 'mean_squared_error':
+            print('Setting the Loss to: Mean Squared Error')
+            self._loss = tfLoss.mean_squared_error(DataCenter, model)
 
     def initialize_optimizer(self, DataCenter):
         if self.optimizer == 'adam':
@@ -240,6 +242,7 @@ class TrainingCenter():
     def update_consol(self):
         self.prog_bar_update()
         print('\n' + str(self.step_c))
+
 
     def train_model(self, DataCenter, model, save=True, load=False):
 
