@@ -327,8 +327,8 @@ class DataCenter():
             self.val_output_batches = self.val_output_batches[:self.batch_size * self.val_batches]
 
         else:
-            self.val_input_batches = np.zeros((self.batch_size, self.val_input_data.shape[1]))
-            self.val_output_batches = np.zeros((self.batch_size, self.val_output_data.shape[1]))
+            self.val_input_batches = np.zeros((self.batch_size, self.val_input_data.shape))
+            self.val_output_batches = np.zeros((self.batch_size, self.val_output_data.shape))
 
             self.val_input_batches = data.reshape_1D_input(self.val_input_batches)
 
@@ -350,8 +350,8 @@ class DataCenter():
             self.eval_output_batches = self.eval_output_batches[:self.batch_size * self.eval_batches]
 
         else:
-            self.eval_input_batches = np.zeros((self.batch_size, self.eval_input_data.shape[1]))
-            self.eval_output_batches = np.zeros((self.batch_size, self.eval_output_data.shape[1]))
+            self.eval_input_batches = np.zeros((self.batch_size, self.eval_input_data.shape))
+            self.eval_output_batches = np.zeros((self.batch_size, self.eval_output_data.shape))
 
             self.eval_input_batches = data.reshape_1D_input(self.eval_input_batches)
 
