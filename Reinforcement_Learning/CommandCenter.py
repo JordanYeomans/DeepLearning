@@ -40,7 +40,7 @@ class CommandCenter:
         if self.trainer:
            self.update_trainer_paths()
            self.trainer_find_data_filepaths()
-           self.model_update_time = 1  # Update time in Minutes
+           self.model_update_time = 5  # Update time in Minutes
            self.last_update = time.time()
 
     def check_if_increment_trainer(self):
