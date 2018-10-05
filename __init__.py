@@ -1,1 +1,1 @@
-import DeepLearning.ReinforcementLearning as ReinforcementLearning
+import Reinforcement_Learning
