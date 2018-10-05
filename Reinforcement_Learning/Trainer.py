@@ -21,5 +21,5 @@ if __name__ == '__main__':
 
     Monty = MontyAgent.Monty()
 
-    Agent = Agent.Agent(env_name, Monty, CommandCenter, render=render, use_logging=True, verbose=verbose)
+    Agent = Agent.Agent(env_name, Monty, CommandCenter, render=False, use_logging=True, verbose=verbose)
     Agent.run_trainer(CommandCenter)
