@@ -8,7 +8,7 @@
 import numpy as np
 import tensorflow as tf
 import os
-import Reinforcement_Learning.Logging as Logging
+import Logging
 
 class NeuralNetwork:
     """

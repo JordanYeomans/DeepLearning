@@ -12,10 +12,10 @@ import gym
 import os
 import shutil
 
-import Reinforcement_Learning.Logging as Logging
-import Reinforcement_Learning.NeuralNetwork as NeuralNetwork
-import Reinforcement_Learning.ReplayMemory as ReplayMemory
-import Reinforcement_Learning.RLFunctions as RLFunctions
+import Logging as Logging
+import NeuralNetwork as NeuralNetwork
+import ReplayMemory
+import RLFunctions
 
 class Agent:
     """

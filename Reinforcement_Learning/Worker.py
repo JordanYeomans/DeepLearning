@@ -1,9 +1,9 @@
 import sys
 sys.path.append('/home/jordanyeomans/Github/')
 
-import Reinforcement_Learning.Agent as Agent
-import Reinforcement_Learning.MontyAgent as MontyAgent
-import Reinforcement_Learning.CommandCenter as CommandCenter
+import Agent
+import MontyAgent
+import CommandCenter
 import PhoenixFileManagement.FileManager as FileManager
 import time
 
