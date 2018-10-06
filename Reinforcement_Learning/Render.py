@@ -14,12 +14,12 @@ if __name__ == '__main__':
 
     reset = False # When true, we are only working with Worker 1
 
-    CommandCenter = CommandCenter.CommandCenter(Phoenix.non_synced_folder_path, Phoenix.model_path, Phoenix.data_sim_path, worker=True, reset_worker=reset)
+    CommandCenter = CommandCenter.CommandCenter(Phoenix.non_synced_folder_path, Phoenix.model_path, Phoenix.data_sim_path, worker=True, reset_worker=reset, version=1.47)
 
     env_name = 'MontezumaRevenge-v0'
     training = True
     render = True
-    verbose = True
+    verbose = False
 
     Monty = MontyAgent.Monty()
 

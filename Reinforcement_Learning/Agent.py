@@ -45,7 +45,7 @@ class Agent:
         :param use_logging:
             Boolean whether to use logging to text-files during training.
         """
-        self.replay_size = 50000
+        self.replay_size = 5000
 
         # Whether this bot is acting as a worker -> saving data rather than processing
         self.worker = CommandCenter.worker
@@ -351,9 +351,12 @@ class Agent:
 
             # Check that all_valid_data_paths is not empty
             if CommandCenter.all_valid_data_paths:
-                increment = CommandCenter.check_if_increment_trainer()
+                increment = CommandCenter.calc_increment_trainer()
 
                 if increment:
+                    CommandCenter.delete_old_data_path()
+                    print('Total Folders Deleted = {}'.format(CommandCenter.deleted_folders))
+
                     # Save a checkpoint of the Neural Network so we can reload it.
                     self.model.update_next_version_checkpoint_dir(CommandCenter.model_path)
                     self.model.save_checkpoint()

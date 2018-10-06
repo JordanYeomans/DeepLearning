@@ -6,7 +6,7 @@ import shutil
 
 class CommandCenter:
 
-    def __init__(self, base, model_base, data_base, worker=False, trainer=False, reset_worker=False, reset_trainer=False):
+    def __init__(self, base, model_base, data_base, worker=False, trainer=False, reset_worker=False, reset_trainer=False, version = 1):
         self.global_base_path = base
         self.global_model_path = model_base
         self.global_data_path = data_base
@@ -15,7 +15,7 @@ class CommandCenter:
         self.trainer_sheet_name = 'TrainerSheet.npy'
 
         # self.model_version_start = 1
-        self.model_version = 1
+        self.model_version = version
         self.model_increment = 0.01
 
         if reset_worker:
@@ -38,13 +38,15 @@ class CommandCenter:
             self.update_worker_paths()
 
         if self.trainer:
-           self.update_trainer_paths()
-           self.trainer_find_data_filepaths()
-           self.model_update_time = 5  # Update time in Minutes
-           self.last_update = time.time()
+            self.update_trainer_paths()
+            self.trainer_find_data_filepaths()
+            self.model_update_time = 1  # Update time in Minutes
+            self.last_update = time.time()
+            self.deleted_folders = 0
 
-    def check_if_increment_trainer(self):
+    def calc_increment_trainer(self):
         if self._model_time_update():
+            shutil.rmtree(self.model_path)
             self._increment_model()
             self.update_trainer_paths()
             self._update_trainer_sheet()
@@ -97,6 +99,22 @@ class CommandCenter:
 
                 except:
                     pass
+
+    def delete_old_data_path(self):
+        self.all_valid_data_paths = []
+        files = os.listdir(self.global_data_path)
+
+        worker_idxs = find_string_idx(files, 'worker')
+        worker_files = np.array(files)[worker_idxs]
+
+        rev_to_remove = float(self.model_version - (3 * self.model_increment))
+
+        for worker_file in worker_files:
+            try:
+                self.deleted_folders += 1
+                shutil.rmtree(self.global_data_path + '/' + worker_file + '/' + str(rev_to_remove) + '/')
+            except FileNotFoundError:
+                pass
 
     def _reset_worker_sheet(self):
         self._open_signin_sheet()
