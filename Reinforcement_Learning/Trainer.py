@@ -12,7 +12,7 @@ if __name__ == '__main__':
     Phoenix = FileManager.PhoenixFileSystem(project='MontezumaRevenge', local_homepath='/home/jordanyeomans/PhoenixFiles')
 
     trainer = True
-    reset_trainer = False
+    reset_trainer = True
 
     CommandCenter = CommandCenter.CommandCenter(Phoenix.non_synced_folder_path, Phoenix.model_path, Phoenix.data_sim_path, worker=False, trainer=trainer, reset_trainer=reset_trainer)
 
