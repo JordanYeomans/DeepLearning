@@ -376,7 +376,7 @@ class Agent:
 
                         shutil.rmtree(data_path)
 
-                    except FileNotFoundError:
+                    except:
                         try:
                             shutil.rmtree(data_path)
                         except:

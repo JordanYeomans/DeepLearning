@@ -6,7 +6,7 @@ import shutil
 
 class CommandCenter:
 
-    def __init__(self, base, model_base, data_base, worker=False, trainer=False, reset_worker=False, reset_trainer=False, version = 1):
+    def __init__(self, base, model_base, data_base, worker=False, trainer=False, reset_worker=False, reset_trainer=False, version=None):
         self.global_base_path = base
         self.global_model_path = model_base
         self.global_data_path = data_base
@@ -15,14 +15,19 @@ class CommandCenter:
         self.trainer_sheet_name = 'TrainerSheet.npy'
 
         # self.model_version_start = 1
-        self.model_version = version
         self.model_increment = 0.01
+
+        if version is None:
+            self.model_version = 1
+            if reset_trainer:
+                self._create_trainer_sheet()
+        else:
+            self._load_trainer_sheet()
+            self._update_trainer_sheet(version=version)
+            self._save_trainer_sheet()
 
         if reset_worker:
             self._reset_worker_sheet()
-
-        if reset_trainer:
-            self._create_trainer_sheet()
 
         self.worker = worker
         self.trainer = trainer
@@ -145,8 +150,11 @@ class CommandCenter:
         self._update_trainer_sheet()
         self._save_trainer_sheet()
 
-    def _update_trainer_sheet(self):
-        self.trainer_controls = {'Model Version': self.model_version}
+    def _update_trainer_sheet(self, version=None):
+        if version is None:
+            self.trainer_controls = {'Model Version': self.model_version}
+        else:
+            self.trainer_controls = {'Model Version': version}
 
     def _save_trainer_sheet(self):
         print('Saved Trainer Sheet')
