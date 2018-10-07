@@ -10,6 +10,7 @@ import time
 import numpy as np
 
 if __name__ == '__main__':
+    print('Starting')
 
     # Arguments
     parser = argparse.ArgumentParser(description='Modify Functionality')

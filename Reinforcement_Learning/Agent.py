@@ -290,7 +290,10 @@ class Agent:
                 if not os.path.exists(data_save_folder):
                     os.makedirs(data_save_folder)
 
-                self.replay_memory.save_numpy_arrays(data_save_folder)
+                try:
+                    self.replay_memory.save_numpy_arrays(data_save_folder)
+                except FileNotFoundError:
+                    pass
 
                 self.replay_memory.reset()
 
@@ -383,5 +386,5 @@ class Agent:
                             pass
 
             else:
-                print('Waiting for Data')
+                print('Waiting for Data for Version {}'.format(CommandCenter.model_version))
                 time.sleep(5)

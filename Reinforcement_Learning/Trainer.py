@@ -1,6 +1,6 @@
 import sys
 sys.path.append('/home/jordanyeomans/Github/')
-
+import argparse
 import Agent
 import MontyAgent
 import CommandCenter
@@ -11,11 +11,17 @@ if __name__ == '__main__':
 
     Phoenix = FileManager.PhoenixFileSystem(project='MontezumaRevenge', local_homepath='/home/jordanyeomans/PhoenixFiles')
 
-    trainer = True
-    reset_trainer = True
-    # version = 1.21
+    # Arguments
+    parser = argparse.ArgumentParser(description='Modify Functionality')
+    parser.add_argument("--reset_trainer", type=bool, default=False)
+    parser.add_argument("--version", type=float, default=1)
 
-    CommandCenter = CommandCenter.CommandCenter(Phoenix.non_synced_folder_path, Phoenix.model_path, Phoenix.data_sim_path, worker=False, trainer=trainer, reset_trainer=reset_trainer, version=version)
+    args = parser.parse_args()
+
+    reset_trainer = args.reset_trainer
+    version = args.version
+
+    CommandCenter = CommandCenter.CommandCenter(Phoenix.non_synced_folder_path, Phoenix.model_path, Phoenix.data_sim_path, worker=False, trainer=True, reset_trainer=reset_trainer, version=version)
 
     env_name = 'MontezumaRevenge-v0'
     verbose = False

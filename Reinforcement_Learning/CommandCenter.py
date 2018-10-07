@@ -83,7 +83,7 @@ class CommandCenter:
         prev_models_to_train = 3
         start_rev = self.model_version - (prev_models_to_train * self.model_increment)
 
-        revs_to_train = np.arange(start_rev, self.model_version, step=self.model_increment)
+        revs_to_train = np.arange(start_rev, self.model_version + self.model_increment, step=self.model_increment)
         revs_to_train = np.round(revs_to_train, 2)
 
         for rev in revs_to_train:
