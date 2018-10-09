@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     Phoenix = FileManager.PhoenixFileSystem(project='MontezumaRevenge', local_homepath='/home/jordanyeomans/PhoenixFiles')
 
-    reset = False # When true, we are only working with Worker 1
+    reset = True # When true, we are only working with Worker 1
 
     # version = 1.21
     version = None
@@ -22,7 +22,6 @@ if __name__ == '__main__':
     training = True
     render = True
     verbose = False
-
 
     Monty = MontyAgent.Monty()
 

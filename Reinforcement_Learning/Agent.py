@@ -94,8 +94,8 @@ class Agent:
                                                         epsilon_testing=0.01)
 
         self.replay_fraction = 1.0
-        self.learning_rate = 1e-4
-        self.loss_limit = 0.0001
+        self.learning_rate = 1e-5
+        self.loss_limit = 0.01
         self.max_epochs = 5.0
 
         # We only create the replay-memory when we are training the agent,
@@ -264,6 +264,7 @@ class Agent:
 
             # When the replay-memory is sufficiently full.
             if self.replay_memory.is_full():
+
 
                 # Update all Q-values in the replay-memory through a backwards-sweep.
                 self.replay_memory.update_all_q_values()

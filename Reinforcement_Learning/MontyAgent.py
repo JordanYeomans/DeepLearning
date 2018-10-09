@@ -6,22 +6,27 @@ import State
 
 class Monty:
 
-    def __init__(self):
+    def __init__(self, epsilon_adjust=1, epsilon_clip=[0.03, 1]):
 
         # Parameters that can be tuned
         self.reward_for_winning = 1
         self.reward_for_idle = -0.1
         self.reward_for_fail = -1
-        self.max_time_without_reward = 200
+        self.max_time_without_reward = 1000
         self.training_array_steps = 200
+
         self.min_epsilon = 0.03
 
         # Starts Here
         self.pos_x = 0
         self.pos_y = 0
+        self.distance = 0
+        self.current_path_layer = 0
 
         self.reward = 0
         self.next_epsilon = None
+        self.epsilon_adjust = epsilon_adjust
+        self.epsilon_clip = epsilon_clip
 
         self.end_due_to_reward = False
         self.end_due_to_time = False
@@ -45,12 +50,13 @@ class Monty:
 
         # Paths
         self._update_global_path()
-        self.remaining_path = self.global_path
+        self._create_remaining_path()
         self.remaining_path_img = self.global_path_img
+        self.max_layers = np.max(self.global_path[:, 3])
 
     def reset(self, img, num_episodes):
 
-        self.__init__()
+        self.__init__(epsilon_adjust=self.epsilon_adjust, epsilon_clip=self.epsilon_clip)
         self.GlobalState = State.GlobalState(img, self.global_state_img_size)
         self._update_monty_pos(img) #Essential for the Local State Calculation
         self._update_nn_state(img)
@@ -67,22 +73,25 @@ class Monty:
 
     def view_states(self):
         plt.figure()
-        plt.subplot(2, 3, 1)
+        plt.subplot(2, 4, 1)
         plt.imshow(self.global_state[:, :, 0])
 
-        plt.subplot(2, 3, 2)
+        plt.subplot(2, 4, 2)
         plt.imshow(self.global_state[:, :, 1])
 
-        plt.subplot(2, 3, 3)
+        plt.subplot(2, 4, 3)
         plt.imshow(self.global_state[:, :, 2])
 
-        plt.subplot(2, 3, 4)
+        plt.subplot(2, 4, 4)
+        plt.imshow(np.add(self.global_state[:, :, 0], self.global_state[:, :, 2]))
+
+        plt.subplot(2, 4, 5)
         plt.imshow(self.nn_state[:, :, 0])
 
-        plt.subplot(2, 3, 5)
+        plt.subplot(2, 4, 6)
         plt.imshow(self.nn_state[:, :, 1])
 
-        plt.subplot(2, 3, 6)
+        plt.subplot(2, 4, 7)
         plt.imshow(self.nn_state[:, :, 2])
         plt.show()
 
@@ -93,8 +102,9 @@ class Monty:
         return self.nn_state_shape
 
     def get_epsilon(self):
-        distance = self.global_path.shape[0] - self.remaining_path.shape[0]
-        return self.epsilon_array[distance]
+        distance = self._get_distance()
+        epsilon = self.epsilon_array[distance] * self.epsilon_adjust
+        return np.clip(epsilon, a_min=self.epsilon_clip[0], a_max=self.epsilon_clip[1])
 
     def get_reward(self):
         return self.reward
@@ -115,6 +125,10 @@ class Monty:
         self.epsilon_array = epsilon_array
 
     ## Internal Functions
+    def _create_remaining_path(self):
+        remaining_idx = np.where(self.global_path[:, 3] == self.current_path_layer)[0]
+        self.remaining_path = self.global_path[remaining_idx]
+
     def _update_monty_pos(self, observation):
         ''' Updates the X and Y Position of Monty in the observation space
 
@@ -186,16 +200,26 @@ class Monty:
                     [136, 125, 0],
                     [136, 170, 0],
                     [23, 170, 0],
-                    [23, 125, 0],
-                    [11, 110, 0]]
+                    [23, 115, 0],
+                    [11, 110, 0],
+                    [23, 115, 1],
+                    [23, 170, 1],
+                    [136, 170, 1],
+                    [135, 125, 1],
+                    [135, 125, 1],
+                    [112, 104, 1],
+                    [112, 125, 1],
+                    [80, 125, 1],
+                    [80, 85, 1],
+                    ]
 
         all_points = [points_1]
 
         # List of points for the path [Reward, X, Y]
         self.global_path = create_path_from_points(all_points)
-
+        self.global_path_remaining = self.global_path.copy()
         # Create image containing the global path, this is what goes into the state
-        self.global_path_img = create_path_img_from_list(self.global_state_img_size, self.global_path)
+        self.global_path_img = create_path_img_from_list(self.global_state_img_size, self.global_path, layer=self.current_path_layer)
 
     def _calc_reward(self):
 
@@ -220,19 +244,25 @@ class Monty:
 
         # Check if we have won
         if len(self.remaining_path) - overlap_idx <= min_dist_to_end:
-            self.end_due_to_reward = True
-            self.reward = self.reward_for_winning
+
+            self.current_path_layer += 1
+            if self.current_path_layer > self.max_layers:
+                self.end_due_to_reward = True
+                self.reward = self.reward_for_winning
+            else:
+                self.reward = 1
+                self._create_remaining_path()
+                self.remaining_path_img = create_path_img_from_list(self.global_state_img_size, self.remaining_path, layer=self.current_path_layer)
 
         # If we haven't won, but we have overlapped with the path
         elif  overlap_idx.size != 0:
             self.reward = self.remaining_path[overlap_idx][0]
             self.remaining_path = self.remaining_path[overlap_idx + 1:]
-            # self.training_path = self.training_path[overlap_idx + 1:]
 
         else:
             self.reward = self.reward_for_idle
 
-        self.remaining_path_img = create_path_img_from_list(self.global_state_img_size, self.remaining_path)
+        self.remaining_path_img = create_path_img_from_list(self.global_state_img_size, self.remaining_path, layer=self.current_path_layer)
 
     def _update_reward_timer(self):
         if self.reward > 0:
@@ -249,7 +279,7 @@ class Monty:
                 or self.end_due_to_episode \
                 or self.end_due_to_reward:
 
-            distance = self.global_path.shape[0] - self.remaining_path.shape[0]
+            distance = self._get_distance()
 
             # If we haven't filled up the prob array yet
             if self.num_episodes < self.training_array_steps:
@@ -273,6 +303,19 @@ class Monty:
                 # epsilon_array = np.add(epsilon_array, self.min_epsilon)
                 self.epsilon_array = np.clip(epsilon_array, self.min_epsilon, 1)
 
+    def _get_distance(self):
+        dist_total = self.global_path.shape[0]
+        dist_remain_future_layers = len(np.where(self.global_path[:, 3] > self.current_path_layer)[0])
+        dist_remain_current_layer = self.remaining_path.shape[0]
+        dist = dist_total - dist_remain_future_layers - dist_remain_current_layer
+
+        # print('Dist Total = {}'.format(dist_total))
+        # print('Dist Remain Future Layers = {}'.format(dist_remain_future_layers))
+        # print('Dist Remain Current Layer = {}'.format(dist_remain_current_layer))
+        # print('Dist = {}'.format(dist))
+
+        return dist
+
 ############# Temporary Functions
 def create_path_from_points(all_points):
 
@@ -287,17 +330,19 @@ def create_path_from_points(all_points):
 
     current_x = list_of_points[0][0]
     current_y = list_of_points[0][1]
+    current_layer = list_of_points[0][2]
 
     target_path = np.zeros((1, 2))
-    training_path = np.zeros((1, 1))
+    layer_path = np.zeros((1, 1))
 
     target_path[0][0] = current_x
     target_path[0][1] = current_y
+    layer_path[0][0] = current_layer
 
     for x_y_points in list_of_points[1:]:
         target_x = x_y_points[0]
         target_y = x_y_points[1]
-        training = x_y_points[2]
+        layer = x_y_points[2]
 
         longest_dist = np.maximum(np.absolute(current_x - target_x),
                                   np.absolute(current_y - target_y))
@@ -306,21 +351,23 @@ def create_path_from_points(all_points):
         y_path = np.array(np.linspace(current_y, target_y, longest_dist).astype(np.int)).reshape(-1, 1)
 
         target_path_new = np.concatenate([x_path, y_path], axis=1)
-        training_path_new = np.ones((target_path_new.shape[0], 1)) * training
+        layer_path_new = np.ones_like(x_path) * layer
 
         target_path = np.concatenate([target_path, target_path_new], axis=0)
-        training_path = np.concatenate([training_path, training_path_new], axis=0)
+        layer_path = np.concatenate([layer_path, layer_path_new], axis=0)
 
         current_x = target_x
         current_y = target_y
 
     reward_function = np.ones((target_path.shape[0], 1))
 
-    return np.concatenate([reward_function, target_path], axis=1)
+    return np.concatenate([reward_function, target_path, layer_path], axis=1)
 
-
-def create_path_img_from_list(state_img_size, path):
+def create_path_img_from_list(state_img_size, path, layer=0):
     path_img = np.zeros((state_img_size[0], state_img_size[1]))
+
+    path_layer_idx = np.where(path[:, 3] == layer)[0]
+    path = path[path_layer_idx]
 
     for i in range(len(path)):
         x = int(path[i][1])
