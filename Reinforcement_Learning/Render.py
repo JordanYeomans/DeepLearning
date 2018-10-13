@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     Phoenix = FileManager.PhoenixFileSystem(project='MontezumaRevenge', local_homepath='/home/jordanyeomans/PhoenixFiles')
 
-    reset = True # When true, we are only working with Worker 1
+    reset = False # When true, we are only working with Worker 1
 
     # version = 1.21
     version = None
@@ -27,5 +27,5 @@ if __name__ == '__main__':
 
     print('Worker Version', CommandCenter.model_version)
 
-    Agent = Agent.Agent(env_name, Monty, CommandCenter, render=render, use_logging=True, verbose=verbose)
+    Agent = Agent.Agent(env_name, Monty, CommandCenter, render=render, use_logging=True, verbose=verbose, record_valid_map=True)
     Agent.run_worker(Monty, CommandCenter)

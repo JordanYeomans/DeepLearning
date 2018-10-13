@@ -24,7 +24,7 @@ class Agent:
     instances of the Replay Memory and Neural Network.
     """
 
-    def __init__(self, env_name, Monty, CommandCenter, render=False, use_logging=True, verbose=False):
+    def __init__(self, env_name, Monty, CommandCenter, render=False, use_logging=True, verbose=False, record_valid_map=False):
         """
         Create an object-instance. This also creates a new object for the
         Replay Memory and the Neural Network.
@@ -54,7 +54,11 @@ class Agent:
         self.env_name = env_name
         # Create the game-environment using OpenAI Gym.
         self.env = gym.make(self.env_name)
+        self.record_valid_map = record_valid_map
 
+        if self.record_valid_map:
+            self.record_valid_map = record_valid_map
+            self.valid_map = np.zeros_like(self.env.reset()[:, :, 0])
         # Get Checkpoint Directory
         # self.checkpoint_dir = CommandCenter.model_path
         if self.worker:
@@ -111,7 +115,8 @@ class Agent:
         self.model = NeuralNetwork.NeuralNetwork(num_actions=self.num_actions,
                                                  state_shape=Monty.get_nn_state_shape(),
                                                  checkpoint_dir=CommandCenter.model_path,
-                                                 worker=self.worker)
+                                                 worker=self.worker,
+                                                 render=render)
 
         # Log of the rewards obtained in each episode during calls to run()
         self.episode_rewards = []
@@ -226,6 +231,8 @@ class Agent:
                                                              iteration=count_states,
                                                              training=self.worker,
                                                              epsilon_override=epsilon)
+            if self.record_valid_map:
+                self.valid_map[Monty.pos_y][Monty.pos_x] += 1
 
             # Take a step in the game-environment using the given action.
             img, _, end_episode, info = self.env.step(action=action)
@@ -252,7 +259,6 @@ class Agent:
             # If we want to render the game
             if self.render:
                 self.env.render()
-                time.sleep(0.005)
 
             # Add the state of the game-environment to the replay-memory.
             self.replay_memory.add(state=state,
@@ -265,6 +271,8 @@ class Agent:
             # When the replay-memory is sufficiently full.
             if self.replay_memory.is_full():
 
+                if self.record_valid_map:
+                    np.save('ValidMap_{}.npy'.format(CommandCenter.worker_id), self.valid_map)
 
                 # Update all Q-values in the replay-memory through a backwards-sweep.
                 self.replay_memory.update_all_q_values()

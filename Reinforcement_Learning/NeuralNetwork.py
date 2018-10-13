@@ -19,7 +19,7 @@ class NeuralNetwork:
     better at estimating the Q-values.
     """
 
-    def __init__(self, num_actions, state_shape, checkpoint_dir, worker=False):
+    def __init__(self, num_actions, state_shape, checkpoint_dir, worker=False, render=False):
         """
         :param num_actions:
             Number of discrete actions for the game-environment.
@@ -132,7 +132,13 @@ class NeuralNetwork:
         # be input to a fully-connected (aka. dense) layer.
         # TODO: For some bizarre reason, this function is not yet in tf.layers
         # TODO: net = tf.layers.flatten(net)
+
+
         net = tf.contrib.layers.flatten(net)
+
+        path = self.x[:, :, 2]
+        path = tf.contrib.layers.flatten(path)
+        net = tf.concat([net, path], 1)
 
         # First fully-connected (aka. dense) layer.
         net = tf.layers.dense(inputs=net, name='layer_fc1', units=1024,
@@ -179,13 +185,15 @@ class NeuralNetwork:
         # Used for saving and loading checkpoints.
         self.saver = tf.train.Saver()
 
-        if self.worker:
+        if self.worker and render is False:
             # Create a new TensorFlow session so we can run the Neural Network.
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.05)
+            self.config = tf.ConfigProto(gpu_options=gpu_options)
+        elif render:
+            self.config = tf.ConfigProto(device_count = {'GPU': 0})
         else:
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.40)
-
-        self.config = tf.ConfigProto(gpu_options=gpu_options)
+            self.config = tf.ConfigProto(gpu_options=gpu_options)
 
         self.session = tf.Session(config=self.config)
 

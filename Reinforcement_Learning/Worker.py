@@ -16,6 +16,8 @@ if __name__ == '__main__':
     parser.add_argument("--start_pause", type=int, default=0)
     parser.add_argument("--reset_worker", type=bool, default=False)
     parser.add_argument("--epsilon_adjust", type=float, default=1)
+    parser.add_argument("--record_valid_map", type=bool, default=False)
+
     args = parser.parse_args()
 
     # Pause before starting
@@ -23,9 +25,10 @@ if __name__ == '__main__':
 
     # Assign Booleans
     worker_reset = args.reset_worker
+    record_valid_map = args.record_valid_map
     training = True
     render = False
-    verbose = False
+    verbose = True
 
     epsilon_adjust = args.epsilon_adjust
     epsilon_clip = [0.03, 0.3]
@@ -38,5 +41,5 @@ if __name__ == '__main__':
 
     print('Worker {}, Version {}'.format(CommandCenter.worker_id, CommandCenter.model_version))
 
-    Agent = Agent.Agent(env_name, Monty, CommandCenter, render=render, use_logging=True, verbose=verbose)
+    Agent = Agent.Agent(env_name, Monty, CommandCenter, render=render, use_logging=True, verbose=verbose, record_valid_map=record_valid_map)
     Agent.run_worker(Monty, CommandCenter)

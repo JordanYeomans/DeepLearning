@@ -20,7 +20,6 @@ if __name__ == '__main__':
 
     reset_trainer = args.reset_trainer
     version = args.version
-
     CommandCenter = CommandCenter.CommandCenter(Phoenix.non_synced_folder_path, Phoenix.model_path, Phoenix.data_sim_path, worker=False, trainer=True, reset_trainer=reset_trainer, version=version)
 
     env_name = 'MontezumaRevenge-v0'
